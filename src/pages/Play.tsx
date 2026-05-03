@@ -89,6 +89,7 @@ const Play = () => {
             {game.id === "reaction" && <ReactionGame onFinished={handleFinished} />}
             {game.id === "flashmath" && <FlashMathGame onFinished={handleFinished} onCfgChange={setFlashCfg} />}
             {game.id === "nback" && <NBackGame onFinished={handleFinished} onCfgChange={setNbackCfg} />}
+            {game.id === "cards" && <CardMemoryGame />}
           </div>
           <aside>
             <ProLeaderboard game={game.id} mode={mode} refreshKey={refreshKey} />
