@@ -256,7 +256,13 @@ export function FlashMathGame({
         </Button>
 
         <div className="rounded-md border border-border bg-muted/40 p-2.5 text-[11px] leading-relaxed text-muted-foreground">
-          每笔数字内部各位互不重复 · 全部题目里 0–9 在每一位上均匀出现 · 加号省略仅显示减号
+          <div className="flex items-center justify-between">
+            <span>本配置答对一题可获</span>
+            <span className="font-mono-tabular text-base font-semibold text-primary">{previewScore(cfg)} 分</span>
+          </div>
+          <div className="mt-1 text-[10px]">
+            积分 = 笔数 × 位数权重(1/1.4/2/2.8/3.8/5/6.5) × 速度系数(1000/ms) × 减法系数(1.3)
+          </div>
         </div>
       </div>
     );
