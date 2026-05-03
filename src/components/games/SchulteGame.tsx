@@ -1,13 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { addScore, formatTime, getPlayerName, getRank } from "@/lib/leaderboard";
-import { Trophy, RotateCcw, Play } from "lucide-react";
-
-type Props = {
-  size: number;
-  onFinished?: () => void;
-};
+import { addScore, formatTime, getPlayerName } from "@/lib/leaderboard";
+import { RotateCcw, Play, Sparkles } from "lucide-react";
 
 function shuffle(n: number) {
   const arr = Array.from({ length: n }, (_, i) => i + 1);
@@ -18,7 +13,13 @@ function shuffle(n: number) {
   return arr;
 }
 
-export function SchulteGame({ size, onFinished }: Props) {
+export function SchulteGame({
+  size,
+  onFinished,
+}: {
+  size: number;
+  onFinished?: () => void;
+}) {
   const total = size * size;
   const [numbers, setNumbers] = useState<number[]>(() => shuffle(total));
   const [next, setNext] = useState(1);
@@ -26,7 +27,6 @@ export function SchulteGame({ size, onFinished }: Props) {
   const [now, setNow] = useState(0);
   const [finishedMs, setFinishedMs] = useState<number | null>(null);
   const [wrongIdx, setWrongIdx] = useState<number | null>(null);
-  const [rank, setRank] = useState<number | null>(null);
   const tickRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -49,7 +49,6 @@ export function SchulteGame({ size, onFinished }: Props) {
     setNow(0);
     setFinishedMs(null);
     setWrongIdx(null);
-    setRank(null);
   };
 
   useEffect(reset, [size]);
@@ -66,8 +65,7 @@ export function SchulteGame({ size, onFinished }: Props) {
       const ms = performance.now() - (startAt ?? performance.now());
       setFinishedMs(ms);
       const name = getPlayerName() || "玩家";
-      const score = addScore({ name, size, timeMs: ms });
-      setRank(getRank(score.id, size));
+      addScore({ game: "schulte", mode: `${size}x${size}`, name, value: ms });
       onFinished?.();
     } else {
       setNext(n + 1);
@@ -78,17 +76,16 @@ export function SchulteGame({ size, onFinished }: Props) {
   const progress = ((next - 1) / total) * 100;
 
   return (
-    <div className="flex flex-col items-center gap-6">
-      {/* HUD */}
+    <div className="flex flex-col items-center gap-5">
       <div className="flex w-full items-center justify-between gap-4">
         <div className="flex flex-col">
-          <span className="text-xs uppercase tracking-widest text-muted-foreground">用时</span>
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">用时</span>
           <span className="font-mono-tabular text-4xl font-bold text-gradient">
             {formatTime(display)}
           </span>
         </div>
         <div className="flex flex-col items-end">
-          <span className="text-xs uppercase tracking-widest text-muted-foreground">下一个</span>
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">下一个</span>
           <span className="font-mono-tabular text-4xl font-bold">
             {finishedMs != null ? "✓" : next}
             <span className="text-base text-muted-foreground"> / {total}</span>
@@ -96,7 +93,6 @@ export function SchulteGame({ size, onFinished }: Props) {
         </div>
       </div>
 
-      {/* Progress */}
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
         <div
           className="h-full bg-gradient-energy transition-all duration-300"
@@ -104,17 +100,12 @@ export function SchulteGame({ size, onFinished }: Props) {
         />
       </div>
 
-      {/* Grid */}
       <div
-        className="grid w-full gap-2 rounded-2xl bg-gradient-card p-3 shadow-elegant"
-        style={{
-          gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))`,
-          aspectRatio: "1 / 1",
-        }}
+        className="grid w-full gap-2 rounded-2xl bg-gradient-card p-3"
+        style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))`, aspectRatio: "1 / 1" }}
       >
         {numbers.map((n, idx) => {
           const done = n < next;
-          const isNext = n === next && startAt;
           const isWrong = wrongIdx === idx;
           return (
             <button
@@ -122,11 +113,10 @@ export function SchulteGame({ size, onFinished }: Props) {
               onClick={() => handleClick(n, idx)}
               disabled={finishedMs != null}
               className={cn(
-                "flex items-center justify-center rounded-xl font-mono-tabular font-bold transition-all duration-150 select-none",
-                "bg-secondary text-secondary-foreground hover:bg-accent/20 active:scale-95",
+                "flex items-center justify-center rounded-xl font-mono-tabular font-bold select-none",
+                "bg-secondary text-secondary-foreground hover:bg-accent/20 active:scale-95 transition-all duration-150",
                 size <= 4 ? "text-3xl md:text-4xl" : size === 5 ? "text-2xl md:text-3xl" : "text-xl md:text-2xl",
                 done && "bg-success/10 text-success/40 pointer-events-none",
-                isNext && !done && "ring-2 ring-primary/30",
                 isWrong && "animate-shake bg-destructive/20 text-destructive",
                 finishedMs != null && "opacity-60",
               )}
@@ -137,20 +127,14 @@ export function SchulteGame({ size, onFinished }: Props) {
         })}
       </div>
 
-      {/* Controls / Result */}
       {finishedMs != null ? (
-        <div className="w-full animate-slide-up rounded-2xl border bg-gradient-card p-6 text-center shadow-md">
-          <Trophy className="mx-auto mb-2 h-10 w-10 text-energy" />
-          <div className="text-sm uppercase tracking-widest text-muted-foreground">完成</div>
-          <div className="my-2 font-mono-tabular text-5xl font-bold text-gradient">
+        <div className="w-full animate-slide-up rounded-2xl border bg-gradient-card p-6 text-center">
+          <Sparkles className="mx-auto mb-2 h-8 w-8 text-energy" />
+          <div className="text-xs uppercase tracking-widest text-muted-foreground">完成</div>
+          <div className="my-1 font-mono-tabular text-5xl font-bold text-gradient">
             {formatTime(finishedMs)}
           </div>
-          {rank && (
-            <div className="text-sm text-muted-foreground">
-              {size}×{size} 榜单第 <span className="font-bold text-foreground">#{rank}</span>
-            </div>
-          )}
-          <Button onClick={reset} size="lg" className="mt-4 bg-gradient-primary hover:opacity-90">
+          <Button onClick={reset} size="lg" className="mt-3 bg-gradient-primary hover:opacity-90">
             <RotateCcw className="mr-2 h-4 w-4" /> 再来一局
           </Button>
         </div>

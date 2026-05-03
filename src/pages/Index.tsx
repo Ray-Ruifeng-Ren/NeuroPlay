@@ -1,24 +1,25 @@
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { SchulteGame } from "@/components/SchulteGame";
-import { Leaderboard } from "@/components/Leaderboard";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  GAMES,
+  getGlobalBest,
+  getPlayerCount,
+  getPlayerName,
+  setPlayerName,
+} from "@/lib/leaderboard";
+import { Brain, User, ArrowRight, Users, Trophy, Zap, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getPlayerName, setPlayerName } from "@/lib/leaderboard";
-import { Brain, Zap, User } from "lucide-react";
 
-const SIZES = [3, 4, 5, 6];
-const LABELS: Record<number, string> = { 3: "入门", 4: "标准", 5: "进阶", 6: "大师" };
+const GAME_ICONS = {
+  schulte: Brain,
+  reaction: Zap,
+  memory: Sparkles,
+};
 
 const Index = () => {
-  const [size, setSize] = useState(4);
   const [name, setName] = useState("");
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  useEffect(() => {
-    setName(getPlayerName());
-  }, []);
-
+  useEffect(() => setName(getPlayerName()), []);
   const handleNameChange = (v: string) => {
     setName(v);
     setPlayerName(v);
@@ -26,24 +27,26 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-gradient-card">
-        <div className="container flex items-center justify-between py-4">
-          <div className="flex items-center gap-2">
+      {/* Glassy header */}
+      <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur-lg">
+        <div className="container flex items-center justify-between py-3">
+          <Link to="/" className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
               <Brain className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-lg font-bold leading-none">NeuroPlay</h1>
-              <p className="text-xs text-muted-foreground">脑力竞技场</p>
+              <h1 className="text-base font-bold leading-none tracking-tight">NeuroPlay</h1>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5">
+                脑力竞技场
+              </p>
             </div>
-          </div>
-          <div className="flex items-center gap-2 rounded-full border bg-background px-3 py-1.5">
+          </Link>
+          <div className="flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 transition-shadow hover:shadow-md">
             <User className="h-3.5 w-3.5 text-muted-foreground" />
             <Input
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
-              placeholder="你的昵称"
+              placeholder="设置昵称"
               className="h-6 w-28 border-0 bg-transparent p-0 text-sm focus-visible:ring-0"
               maxLength={12}
             />
@@ -52,69 +55,97 @@ const Index = () => {
       </header>
 
       {/* Hero */}
-      <section className="border-b bg-gradient-hero">
-        <div className="container py-10 text-primary-foreground">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-widest opacity-80">
-            <Zap className="h-3.5 w-3.5" />
-            今日挑战 · 舒尔特方格
+      <section className="relative overflow-hidden border-b bg-gradient-hero">
+        <div className="absolute inset-0 opacity-30" style={{
+          backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 30%, white 1px, transparent 1px)',
+          backgroundSize: '60px 60px',
+        }} />
+        <div className="container relative py-12 text-primary-foreground md:py-16">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest opacity-90">
+            <Sparkles className="h-3.5 w-3.5" />
+            脑力竞技广场
           </div>
-          <h2 className="mt-2 text-3xl font-bold md:text-4xl">
-            训练你的注意力极限
+          <h2 className="mt-3 text-3xl font-bold leading-tight md:text-5xl">
+            选一个游戏 · 挑战极限
           </h2>
-          <p className="mt-2 max-w-xl text-sm opacity-90 md:text-base">
-            按 <b>1 → N</b> 顺序点击方格，时间越短分数越高。全球飞行员都在用的经典训练法。
+          <p className="mt-3 max-w-xl text-sm opacity-90 md:text-base">
+            注意力、反应速度、记忆力 —— 三种经典训练，全球玩家同台竞技。
           </p>
         </div>
       </section>
 
-      {/* Main */}
-      <main className="container py-8">
-        {/* Difficulty selector */}
-        <div className="mb-6 flex flex-wrap items-center gap-2">
-          <span className="mr-2 text-sm font-semibold text-muted-foreground">难度</span>
-          {SIZES.map((s) => (
-            <button
-              key={s}
-              onClick={() => setSize(s)}
-              className={cn(
-                "rounded-full border px-4 py-1.5 text-sm font-semibold transition-all",
-                size === s
-                  ? "border-transparent bg-gradient-primary text-primary-foreground shadow-md"
-                  : "bg-card hover:border-primary/40 hover:text-primary",
-              )}
-            >
-              {s}×{s} <span className="ml-1 opacity-70">{LABELS[s]}</span>
-            </button>
-          ))}
+      {/* Games grid */}
+      <main className="container py-10">
+        <div className="mb-5 flex items-end justify-between">
+          <div>
+            <h3 className="text-xl font-bold">所有游戏</h3>
+            <p className="text-sm text-muted-foreground">点击进入挑战</p>
+          </div>
+          <span className="text-xs text-muted-foreground">{Object.keys(GAMES).length} 款游戏</span>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-          <div className="rounded-3xl border bg-card p-5 shadow-elegant md:p-8">
-            <SchulteGame
-              size={size}
-              onFinished={() => setRefreshKey((k) => k + 1)}
-            />
-          </div>
-          <aside className="space-y-4">
-            <Leaderboard size={size} refreshKey={refreshKey} />
-            <div className="rounded-2xl border bg-gradient-card p-5 text-sm">
-              <h4 className="mb-2 font-bold">💡 玩法提示</h4>
-              <ul className="space-y-1.5 text-muted-foreground">
-                <li>· 视线尽量盯住中心</li>
-                <li>· 用余光扫描周围数字</li>
-                <li>· 5×5 平均水平：25-35 秒</li>
-                <li>· 大师水平：&lt; 18 秒</li>
-              </ul>
-            </div>
-          </aside>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Object.values(GAMES).map((g) => {
+            const Icon = GAME_ICONS[g.id];
+            const best = getGlobalBest(g.id, defaultMode(g.id));
+            const players = getPlayerCount(g.id, defaultMode(g.id));
+            return (
+              <Link
+                key={g.id}
+                to={`/play/${g.id}`}
+                className="group relative overflow-hidden rounded-2xl border bg-card p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              >
+                <div className={cn(
+                  "absolute -right-12 -top-12 h-36 w-36 rounded-full opacity-10 blur-2xl transition-opacity group-hover:opacity-20",
+                  `bg-gradient-to-br ${g.accent}`,
+                )} />
+                <div className="relative">
+                  <div className={cn(
+                    "mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl shadow-md text-white",
+                    `bg-gradient-to-br ${g.accent}`,
+                  )}>
+                    <Icon className="h-6 w-6" strokeWidth={2.2} />
+                  </div>
+                  <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    {g.tagline}
+                  </div>
+                  <h4 className="mt-1 text-lg font-bold">{g.name}</h4>
+                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{g.description}</p>
+
+                  <div className="mt-4 flex items-center justify-between border-t pt-3 text-xs">
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center gap-1 text-muted-foreground">
+                        <Users className="h-3 w-3" />
+                        {players}
+                      </span>
+                      {best && (
+                        <span className="flex items-center gap-1 text-muted-foreground">
+                          <Trophy className="h-3 w-3 text-energy" />
+                          <span className="font-mono-tabular font-semibold text-foreground">
+                            {g.formatValue(best.value)}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="mt-10 rounded-2xl border bg-gradient-card p-6 text-center text-sm text-muted-foreground">
+          排名当前保存在本机 · 接入 Lovable Cloud 即可解锁全球榜与好友 PK
         </div>
       </main>
-
-      <footer className="container py-6 text-center text-xs text-muted-foreground">
-        排名当前保存在本机 · 想看全球榜？接入 Lovable Cloud 即可一键升级
-      </footer>
     </div>
   );
 };
+
+function defaultMode(id: string) {
+  if (id === "schulte") return "4x4";
+  return "default";
+}
 
 export default Index;
