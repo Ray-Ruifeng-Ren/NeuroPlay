@@ -4,7 +4,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-export type GameId = "flashmath" | "schulte" | "reaction" | "nback";
+export type GameId = "flashmath" | "schulte" | "reaction" | "nback" | "cards";
 export type ScoreDirection = "lower" | "higher";
 export type Period = "weekly" | "all";
 
