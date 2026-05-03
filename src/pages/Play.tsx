@@ -6,6 +6,7 @@ import { SchulteGame } from "@/components/games/SchulteGame";
 import { ReactionGame } from "@/components/games/ReactionGame";
 import { FlashMathGame, type FlashCfg } from "@/components/games/FlashMathGame";
 import { NBackGame } from "@/components/games/NBackGame";
+import { CardMemoryGame } from "@/components/games/CardMemoryGame";
 import { ProLeaderboard } from "@/components/ProLeaderboard";
 import { AccountMenu } from "@/components/AccountMenu";
 import { cn } from "@/lib/utils";
