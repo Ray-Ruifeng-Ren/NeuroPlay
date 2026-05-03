@@ -107,7 +107,10 @@ export function CardMemoryGame() {
         </div>
       </div>
 
-      <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-8 md:grid-cols-13">
+      <div
+        className="grid gap-1.5"
+        style={{ gridTemplateColumns: "repeat(13, minmax(0, 1fr))" }}
+      >
         {deck.map((card) => {
           const faceUp = isFaceUp(card.id);
           return (
