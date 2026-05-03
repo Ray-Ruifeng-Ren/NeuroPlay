@@ -19,12 +19,23 @@ export interface FlashCfg {
 
 const DEFAULT_CFG: FlashCfg = { count: 5, digits: 2, speedMs: 700, includeSub: false };
 
+// 参考世界珠算心算联合会 / 中国珠协比赛规则的近似积分体系：
+// 总分 = round( 笔数 × 位数权重 × 速度系数 × 减法系数 )
+// · 位数权重 digitWeight: 1→1, 2→1.4, 3→2, 4→2.8, 5→3.8, 6→5, 7→6.5（位数越多，难度非线性上升）
+// · 速度系数 = clamp(1000 / speedMs, 0.4, 8)，以 1 秒/笔为基准 1.0；200ms 约 5.0
+// · 减法系数 = 含减号 1.3，纯加 1.0（官方比赛对加减混合给予更高难度系数）
+const DIGIT_WEIGHT = [0, 1, 1.4, 2, 2.8, 3.8, 5, 6.5];
+
+export function previewScore(cfg: FlashCfg): number {
+  const w = DIGIT_WEIGHT[cfg.digits] ?? cfg.digits;
+  const speed = Math.min(8, Math.max(0.4, 1000 / Math.max(cfg.speedMs, 100)));
+  const sub = cfg.includeSub ? 1.3 : 1;
+  return Math.round(cfg.count * w * speed * sub * 10);
+}
+
 function computeScore(cfg: FlashCfg, correct: boolean): number {
   if (!correct) return 0;
-  const base = cfg.digits * cfg.count * 10;
-  const speedMul = Math.max(1, Math.round((1100 / Math.max(cfg.speedMs, 150)) * 10) / 10);
-  const subBonus = cfg.includeSub ? 1.2 : 1;
-  return Math.round(base * speedMul * subBonus);
+  return previewScore(cfg);
 }
 
 // ── voice ──
