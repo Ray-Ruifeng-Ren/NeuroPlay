@@ -213,81 +213,27 @@ export function CardMemoryGame() {
   );
 }
 
-// Standard pip positions on a 7-row × 3-col grid (like real playing cards)
-// row 0=top, 6=bottom; col 0=left, 1=center, 2=right
-const PIP_LAYOUT: Record<string, [number, number][]> = {
-  "2":  [[0,1],[6,1]],
-  "3":  [[0,1],[3,1],[6,1]],
-  "4":  [[0,0],[0,2],[6,0],[6,2]],
-  "5":  [[0,0],[0,2],[3,1],[6,0],[6,2]],
-  "6":  [[0,0],[0,2],[3,0],[3,2],[6,0],[6,2]],
-  "7":  [[0,0],[0,2],[1.5,1],[3,0],[3,2],[6,0],[6,2]],
-  "8":  [[0,0],[0,2],[1.5,1],[3,0],[3,2],[4.5,1],[6,0],[6,2]],
-  "9":  [[0,0],[0,2],[2,0],[2,2],[3,1],[4,0],[4,2],[6,0],[6,2]],
-  "10": [[0,0],[0,2],[1.5,1],[2,0],[2,2],[4,0],[4,2],[4.5,1],[6,0],[6,2]],
+// Use real playing-card images from deckofcardsapi.com (free, public).
+// Naming: {rank}{suit}.png, where rank: A,2-9,0(=10),J,Q,K; suit: S,H,D,C
+const RANK_CODE: Record<string, string> = {
+  A: "A", "2": "2", "3": "3", "4": "4", "5": "5", "6": "6", "7": "7",
+  "8": "8", "9": "9", "10": "0", J: "J", Q: "Q", K: "K",
 };
+const SUIT_CODE: Record<string, string> = { spade: "S", heart: "H", diamond: "D", club: "C" };
 
-function CardFace({ card, large = false }: { card: Card; large?: boolean }) {
-  const colorCls = card.suit.red ? "text-red-600" : "text-neutral-900";
-  const isFigure = card.rank === "J" || card.rank === "Q" || card.rank === "K";
-  const isAce = card.rank === "A";
-  const pips = PIP_LAYOUT[card.rank];
+function cardImageUrl(card: Card) {
+  return `https://deckofcardsapi.com/static/img/${RANK_CODE[card.rank]}${SUIT_CODE[card.suit.name]}.png`;
+}
 
-  const cornerSize = large ? "text-sm" : "text-[8px]";
-  const cornerSuit = large ? "text-xs" : "text-[7px]";
-
+function CardFace({ card }: { card: Card; large?: boolean }) {
   return (
-    <div className={cn("relative h-full w-full select-none leading-none", colorCls)}>
-      {/* Top-left index */}
-      <div className={cn("absolute left-0.5 top-0.5 flex flex-col items-center font-semibold", cornerSize)}>
-        <span>{card.rank}</span>
-        <span className={cornerSuit}>{card.suit.s}</span>
-      </div>
-      {/* Bottom-right index (rotated 180°) */}
-      <div className={cn("absolute bottom-0.5 right-0.5 flex rotate-180 flex-col items-center font-semibold", cornerSize)}>
-        <span>{card.rank}</span>
-        <span className={cornerSuit}>{card.suit.s}</span>
-      </div>
-
-      {/* Center area */}
-      <div className="absolute inset-0 px-2.5 py-3.5">
-        {isAce && (
-          <div className="flex h-full w-full items-center justify-center">
-            <span className={cn(large ? "text-6xl" : "text-2xl")}>{card.suit.s}</span>
-          </div>
-        )}
-        {isFigure && (
-          <div className={cn(
-            "flex h-full w-full flex-col items-center justify-center rounded-sm border-2 font-bold",
-            card.suit.red ? "border-red-600/60 bg-red-50/40" : "border-neutral-900/60 bg-neutral-50/40",
-          )}>
-            <span className={cn("font-display tracking-tight", large ? "text-5xl" : "text-lg")}>{card.rank}</span>
-            <span className={cn(large ? "text-2xl" : "text-[10px]")}>{card.suit.s}</span>
-          </div>
-        )}
-        {pips && (
-          <div className="relative h-full w-full">
-            {pips.map(([r, c], i) => (
-              <span
-                key={i}
-                className={cn(
-                  "absolute -translate-x-1/2 -translate-y-1/2",
-                  large ? "text-xl" : "text-[8px] leading-none",
-                  // rotate bottom half pips for traditional look
-                  r > 3 && "rotate-180",
-                )}
-                style={{
-                  top: `${(r / 6) * 100}%`,
-                  left: `${(c / 2) * 100}%`,
-                }}
-              >
-                {card.suit.s}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+    <img
+      src={cardImageUrl(card)}
+      alt={`${card.rank} of ${card.suit.name}`}
+      loading="lazy"
+      draggable={false}
+      className="h-full w-full object-contain"
+    />
   );
 }
 
