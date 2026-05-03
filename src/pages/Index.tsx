@@ -31,7 +31,7 @@ const Index = () => {
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-card px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               <Sparkles className="h-3 w-3 text-primary" /> 今日推荐
             </div>
-            <h1 className="font-display text-5xl leading-[1.05] tracking-tight md:text-6xl">
+            <h1 className="font-display leading-[1.05] tracking-tight md:text-6xl text-4xl">
               专注、速算、记忆<br />
               <em className="not-italic text-primary">皆可量化。</em>
             </h1>
