@@ -96,7 +96,7 @@ export async function submitScore(input: {
     game: input.game,
     mode: input.mode,
     value: input.value,
-    meta: input.meta ?? {},
+    meta: (input.meta ?? {}) as any,
   });
   if (error) return { ok: false, error: error.message };
   return { ok: true };
