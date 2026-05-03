@@ -429,8 +429,12 @@ export function FlashMathGame({ onFinished }: { onFinished?: () => void }) {
           )}
           <div className="mt-2 border-t pt-2 font-mono-tabular text-[11px] text-muted-foreground break-all">
             {problem.terms
-              .map((t, i) => (i === 0 ? `${problem.signs[i] === "-" ? "−" : ""}${t}` : ` ${problem.signs[i] === "-" ? "−" : ""}${problem.signs[i] === "+" ? "" : ""}${problem.signs[i] === "+" ? "" : ""}${t}`))
-              .join(problem.signs.some((s, i) => i > 0 && s === "+") ? "  " : "  ")}
+              .map((t, i) => {
+                const s = problem.signs[i];
+                if (i === 0) return s === "-" ? `−${t}` : `${t}`;
+                return s === "-" ? ` − ${t}` : `  ${t}`;
+              })
+              .join("")}
             {" = "}
             {problem.answer}
           </div>
