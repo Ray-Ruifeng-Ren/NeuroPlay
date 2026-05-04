@@ -61,7 +61,7 @@ export function AuthDialog({ open, onOpenChange }: { open: boolean; onOpenChange
       }
       onOpenChange(false);
     } catch (err: any) {
-      toast({ title: "操作失败", description: err.message ?? String(err), variant: "destructive" });
+      toast({ title: "操作失败", description: friendlyAuthError(err.message ?? String(err)), variant: "destructive" });
     } finally {
       setLoading(false);
     }
