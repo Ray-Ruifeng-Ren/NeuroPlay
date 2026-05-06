@@ -22,7 +22,8 @@ const Play = () => {
   const [flashCfg, setFlashCfg] = useState<FlashCfg>({ count: 5, digits: 2, speedMs: 700, includeSub: false });
   const [nbackCfg, setNbackCfg] = useState({ n: 2, trials: 20, intervalMs: 2000 });
   const [orbitMode, setOrbitMode] = useState<string>("overall");
-  const [gauntletMode, setGauntletMode] = useState<string>("overall");
+  const [gauntletCfg, setGauntletCfg] = useState<GauntletConfig>(DEFAULT_GAUNTLET);
+  const [gauntletView, setGauntletView] = useState<"overall" | "current">("overall");
 
   if (!gameId || !(gameId in GAMES)) {
     return (
