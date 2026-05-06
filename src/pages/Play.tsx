@@ -9,6 +9,7 @@ import { NBackGame } from "@/components/games/NBackGame";
 import { CardMemoryGame } from "@/components/games/CardMemoryGame";
 import { OrbitFocusGame } from "@/components/games/OrbitFocusGame";
 import { GauntletFlashGame } from "@/components/games/GauntletFlashGame";
+import { DEFAULT_GAUNTLET, encodeMode, type GauntletConfig } from "@/lib/gauntlet";
 import { ProLeaderboard } from "@/components/ProLeaderboard";
 import { AccountMenu } from "@/components/AccountMenu";
 import { cn } from "@/lib/utils";
