@@ -99,7 +99,7 @@ const Play = () => {
             {game.id === "nback" && <NBackGame onFinished={handleFinished} onCfgChange={setNbackCfg} />}
             {game.id === "cards" && <CardMemoryGame />}
             {game.id === "orbit" && <OrbitFocusGame onFinished={handleFinished} />}
-            {game.id === "gauntlet" && <GauntletFlashGame onFinished={handleFinished} />}
+            {game.id === "gauntlet" && <GauntletFlashGame onFinished={handleFinished} onCfgChange={setGauntletCfg} />}
           </div>
           <aside className="space-y-3">
             {game.id === "orbit" && (
