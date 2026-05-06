@@ -574,6 +574,85 @@ export function OrbitFocusGame({ onFinished }: { onFinished?: () => void }) {
       {!user && (
         <p className="text-center text-[11px] text-muted-foreground">登录后成绩自动同步到独立等级榜与 PFI 通榜</p>
       )}
+
+      {/* 详细玩法说明 */}
+      <details className="group rounded-lg border border-border bg-card/40 px-4 py-3 text-sm">
+        <summary className="flex cursor-pointer items-center justify-between font-medium text-foreground">
+          <span className="inline-flex items-center gap-2">
+            <Target className="h-4 w-4 text-primary" /> 玩法详细说明
+          </span>
+          <span className="text-xs text-muted-foreground transition-transform group-open:rotate-180">▾</span>
+        </summary>
+
+        <div className="mt-4 space-y-5 text-[13px] leading-relaxed text-muted-foreground">
+          <section>
+            <h4 className="mb-1 font-semibold text-foreground">🎯 游戏目标</h4>
+            <p>
+              在多个圆点沿轨道高速运动时，<strong className="text-foreground">用眼睛持续追踪被高亮的目标点</strong>，
+              并在中央随机弹出的"挑战"中做出正确反应。这是融合
+              <strong className="text-foreground">眼动训练（Saccade / Smooth Pursuit）</strong>与
+              <strong className="text-foreground">持续性专注力（Sustained Attention）</strong>的训练。
+            </p>
+          </section>
+
+          <section>
+            <h4 className="mb-1 font-semibold text-foreground">🕹 游戏流程</h4>
+            <ol className="ml-5 list-decimal space-y-1">
+              <li><strong className="text-foreground">记忆阶段</strong>：开始后约 2 秒，部分圆点会高亮——记住它们就是你的"目标"。</li>
+              <li><strong className="text-foreground">追踪阶段</strong>：所有点恢复同色并沿轨道运动，请用眼睛盯住目标点（不要用鼠标跟）。</li>
+              <li><strong className="text-foreground">挑战事件</strong>：中央会不定时弹出三种挑战之一，需立刻反应。</li>
+              <li><strong className="text-foreground">结算</strong>：一局结束后给出得分、命中率、平均反应时与星级。</li>
+            </ol>
+          </section>
+
+          <section>
+            <h4 className="mb-2 font-semibold text-foreground">⚡ 三种挑战事件</h4>
+            <div className="space-y-2">
+              <div className="rounded-md border border-border bg-background/40 p-2.5">
+                <div className="font-medium text-foreground">📸 Snapshot · 抓拍</div>
+                <p className="mt-0.5">所有点突然停止，请<strong>点击你认为是目标的所有点</strong>。点错或漏点都会扣分。</p>
+              </div>
+              <div className="rounded-md border border-border bg-background/40 p-2.5">
+                <div className="font-medium text-foreground">🎨 Stroop · 色词冲突</div>
+                <p className="mt-0.5">中央弹出一个用彩色显示的颜色文字（例如红色字写着"蓝"），请选择
+                  <strong>"字的颜色"</strong>而不是字本身的含义。</p>
+              </div>
+              <div className="rounded-md border border-border bg-background/40 p-2.5">
+                <div className="font-medium text-foreground">✓✗ Go / NoGo · 抑制控制</div>
+                <p className="mt-0.5">看到 <strong>✓</strong> 立刻点击；看到 <strong>✗</strong> 千万<strong>不要点</strong>，等它消失。误点扣分。</p>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <h4 className="mb-1 font-semibold text-foreground">📈 难度与机制（L1–L10）</h4>
+            <ul className="ml-5 list-disc space-y-1">
+              <li>等级越高：<strong className="text-foreground">轨道更多、点更多、目标更多、速度更快</strong>。</li>
+              <li>L4 起加入 <strong>方向反转</strong>，L6 起加入 <strong>闪烁干扰</strong>，L8 起轨道之间会<strong>交叉重叠</strong>。</li>
+              <li>每级挑战频率与时间窗口都会逐级压缩，请逐级解锁，不建议直接挑战 L10。</li>
+            </ul>
+          </section>
+
+          <section>
+            <h4 className="mb-1 font-semibold text-foreground">🏆 双轨计分</h4>
+            <ul className="ml-5 list-disc space-y-1">
+              <li><strong className="text-foreground">独立榜（L1–L10）</strong>：每个难度独立一个排行榜，比拼单局极限。</li>
+              <li><strong className="text-foreground">PFI 通榜（Personal Focus Index）</strong>：取你每个等级的最佳成绩
+                <em>加权求和</em>，等级越高权重越大。想冲通榜必须每级都打高，刷低难度无效。</li>
+              <li>三星成绩会获得额外 <strong>×1.15</strong> 的 PFI 加成。</li>
+            </ul>
+          </section>
+
+          <section>
+            <h4 className="mb-1 font-semibold text-foreground">💡 训练建议</h4>
+            <ul className="ml-5 list-disc space-y-1">
+              <li>视线放在屏幕中央偏后位置，<strong>用余光感知运动</strong>，不要追着单个点转头。</li>
+              <li>挑战弹出时优先反应中央事件，再迅速回到外周追踪——这是核心训练点。</li>
+              <li>每天 5–10 分钟、每次 3–5 局即可，疲劳时不要硬冲高难度。</li>
+            </ul>
+          </section>
+        </div>
+      </details>
     </div>
   );
 }
