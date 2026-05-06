@@ -1,17 +1,28 @@
-// Gauntlet Flash Math — 障碍闪电心算
+// Gauntlet Flash Math — 障碍闪电心算（v3）
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { submitScore } from "@/lib/leaderboard";
 import {
-  LEVELS,
-  OBSTACLES,
+  CHAOS_LEVELS,
+  CHAOS_ORDER,
+  COUNT_OPTIONS,
+  DIGIT_OPTIONS,
+  SPEED_OPTIONS,
+  DEFAULT_GAUNTLET,
+  PRESETS,
   computeGauntletScore,
+  computeD,
+  computeDf,
+  computeDc,
+  previewMaxScore,
   starsFor,
+  encodeMode,
   submitGauntletOverall,
-  type LevelConfig,
-  type ObstacleId,
+  type GauntletConfig,
+  type ChaosLevel,
+  type ChaosSpec,
 } from "@/lib/gauntlet";
 import { buildProblem, type Problem } from "@/lib/flashMath";
 import { parseSpokenNumber } from "@/lib/parseSpokenNumber";
@@ -23,21 +34,25 @@ type Phase = "config" | "ready" | "playing" | "answer" | "result";
 
 interface FlashItem {
   kind: "term" | "decoy" | "blank";
-  value?: number; // term/decoy
-  signEffective?: "+" | "-"; // 经过 color 反转后的实际符号
-  signRaw?: "+" | "-"; // 原始符号
-  colorClass?: "blue" | "orange"; // M6
-  fontScale?: number; // M5
-  x?: number; // M1 0..1
-  y?: number; // M1 0..1
+  value?: number;
+  signRaw?: "+" | "-";
+  colorClass?: "blue" | "orange";
+  fontScale?: number;
+  x?: number;
+  y?: number;
   durationMs: number;
 }
 
 const ANSWER_WINDOW_MS = 12000;
 
-export function GauntletFlashGame({ onFinished }: { onFinished?: () => void }) {
-  const [levelIdx, setLevelIdx] = useState(0); // 0..9
-  const [allowBlink, setAllowBlink] = useState(false); // 默认关，符合无障碍
+export function GauntletFlashGame({
+  onCfgChange,
+  onFinished,
+}: {
+  onCfgChange?: (cfg: GauntletConfig) => void;
+  onFinished?: () => void;
+}) {
+  const [cfg, setCfg] = useState<GauntletConfig>(DEFAULT_GAUNTLET);
   const [phase, setPhase] = useState<Phase>("config");
   const [problem, setProblem] = useState<Problem | null>(null);
   const [sequence, setSequence] = useState<FlashItem[]>([]);
@@ -53,7 +68,15 @@ export function GauntletFlashGame({ onFinished }: { onFinished?: () => void }) {
   } | null>(null);
   const timerRef = useRef<number | null>(null);
 
-  const level = LEVELS[levelIdx];
+  useEffect(() => { onCfgChange?.(cfg); }, [cfg, onCfgChange]);
+
+  const chaos = CHAOS_LEVELS[cfg.chaos];
+  const Df = computeDf(cfg);
+  const Dc = computeDc(cfg.chaos, cfg.blink);
+  const D = computeD(cfg);
+  const maxScore = previewMaxScore(cfg);
+
+  const updateCfg = (patch: Partial<GauntletConfig>) => setCfg((c) => ({ ...c, ...patch }));
 
   const reset = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -66,8 +89,8 @@ export function GauntletFlashGame({ onFinished }: { onFinished?: () => void }) {
   };
 
   const begin = () => {
-    const p = buildProblem(level.count, level.digits, level.includeSub);
-    const seq = buildSequence(p, level, allowBlink);
+    const p = buildProblem(cfg.count, cfg.digits, cfg.includeSub);
+    const seq = buildSequence(p, cfg, chaos);
     setProblem(p);
     setSequence(seq);
     setStepIdx(0);
@@ -107,16 +130,16 @@ export function GauntletFlashGame({ onFinished }: { onFinished?: () => void }) {
     if (value == null || !problem) return;
     const correct = value === problem.answer;
     const usedMs = Date.now() - answerStartAt;
-    const score = computeGauntletScore(level, correct, usedMs, ANSWER_WINDOW_MS);
-    const stars = correct ? starsFor(level, score) : 0;
+    const score = computeGauntletScore(cfg, correct, usedMs, ANSWER_WINDOW_MS);
+    const stars = correct ? starsFor(cfg, score) : 0;
     setResult({ correct, score, answered: value, stars, expected: problem.answer });
     setPhase("result");
     if (correct) {
       const r = await submitScore({
         game: "gauntlet" as any,
-        mode: `L${level.level}`,
+        mode: encodeMode(cfg),
         value: score,
-        meta: { stars, difficulty: level.difficulty, usedMs },
+        meta: { stars, D, Df, Dc, usedMs },
       });
       if (r.ok) {
         const { data: u } = await supabase.auth.getUser();
@@ -128,10 +151,12 @@ export function GauntletFlashGame({ onFinished }: { onFinished?: () => void }) {
     }
   };
 
+  // ────────────── Render ──────────────
+
   if (phase === "config") {
     return (
       <div className="flex flex-col gap-5">
-        {/* 详细说明 */}
+        {/* 玩法说明 */}
         <details className="group rounded-md border border-border bg-card/40 p-3 text-xs">
           <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground">
             <span className="flex items-center gap-1.5">
@@ -142,122 +167,152 @@ export function GauntletFlashGame({ onFinished }: { onFinished?: () => void }) {
           <div className="mt-3 space-y-2.5 leading-relaxed text-muted-foreground">
             <p>
               <b className="text-foreground">🎯 目标：</b>在视觉/注意力干扰下完成闪电心算。
-              算式与基线版相同（数位均匀分布、单数无重复），<b className="text-foreground">仍然只输入最终结果</b>，
-              所以训练的是"心算 × 抑制控制 × 视觉搜索"三项能力。
+              算式与基线版相同，<b className="text-foreground">仍只输入最终结果</b>。
             </p>
             <p>
-              <b className="text-foreground">🧩 6 种障碍模组：</b>
+              <b className="text-foreground">⚙️ 自由参数：</b>笔数、位数、闪速、是否含减——按基线闪电心算同款节奏自调。
+            </p>
+            <p>
+              <b className="text-foreground">🧩 三档干扰：</b>
             </p>
             <ul className="ml-4 list-disc space-y-0.5">
-              <li><b>位置漂移</b>：数字在屏幕中央安全区随机位置出现</li>
-              <li><b>干扰数字</b>：灰色斜体的"假数字"穿插出现，<b className="text-destructive">必须忽略</b></li>
-              <li><b>噪点背景</b>：背景出现低对比度的随机数字纹理</li>
-              <li><b>闪屏间隔</b>：数字之间穿插短暂闪屏（默认关闭，可在下方启用）</li>
-              <li><b>字号抖动</b>：每个数字字号在 ±30% 范围内变化</li>
-              <li><b>颜色反转</b>：<span className="text-blue-500">蓝色</span>正常，<span className="text-orange-500">橙色</span>符号反转（原 + 当 -，原 - 当 +）。L8 起启用</li>
+              <li><b>低 Mild</b>：位置漂移 + 微弱噪点（×1.4）</li>
+              <li><b>中 Strong</b>：+ 字号抖动 + 1 个干扰假数字（×1.9）</li>
+              <li><b>强 Chaos</b>：+ 高密度噪点 + 2 干扰 + <span className="text-orange-500">橙色提示</span>（×2.5）</li>
             </ul>
             <p>
-              <b className="text-foreground">📈 难度：</b>L1（D=1.8）→ L10（D=7.2）。
-              难度系数 D = 1 + Σ 模组权重，直接乘进得分，等级越高同样答对收益越高。
+              <b className="text-foreground">📊 计分：</b>得分 = (1000 + 速度奖励) × Df × Dc。
+              Df 来自算式参数，Dc 来自干扰强度，乘起来一目了然。
             </p>
             <p>
-              <b className="text-foreground">🏆 双轨计分：</b>每个等级有独立榜（L1–L10），
-              另有 <b>GFI 通榜</b>（Gauntlet Focus Index）= 各等级最佳分 × 等级权重 × 三星加成（×1.15）。
-            </p>
-            <p>
-              <b className="text-foreground">💡 训练建议：</b>用余光预判数字落点，
-              碰到橙色数字先在脑里把符号反过来再算；干扰数字看到灰色或斜体立即放弃这一项。
+              <b className="text-foreground">🏆 双轨榜：</b>每个具体配置一个独立榜（同配置可比），
+              另有 GFI 通榜——汇总你所有配置的最佳分（鼓励多样化训练）。
             </p>
           </div>
         </details>
 
-        {/* 等级选择 */}
+        {/* 预设 */}
         <div>
-          <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            <span>等级</span>
-            <span className="font-mono-tabular">D = {level.difficulty}</span>
+          <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            一键预设
           </div>
-          <div className="grid grid-cols-5 gap-1.5">
-            {LEVELS.map((l, i) => (
+          <div className="grid grid-cols-4 gap-1.5">
+            {PRESETS.map((p) => (
               <button
-                key={l.level}
-                onClick={() => setLevelIdx(i)}
-                className={cn(
-                  "rounded-md border py-2 font-mono-tabular text-xs font-medium transition-colors",
-                  levelIdx === i
-                    ? "border-primary bg-primary/5 text-primary"
-                    : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30",
-                )}
+                key={p.id}
+                onClick={() => setCfg(p.cfg)}
+                className="rounded-md border border-border py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
               >
-                L{l.level}
+                {p.name}
               </button>
             ))}
           </div>
         </div>
 
-        {/* 当前等级摘要 */}
-        <div className="rounded-md border border-border bg-card p-3">
-          <div className="grid grid-cols-4 gap-2 text-center">
-            <Stat label="笔数" value={`${level.count}`} />
-            <Stat label="位数" value={`${level.digits}`} />
-            <Stat label="闪速" value={`${level.speedMs}ms`} />
-            <Stat label="减法" value={level.includeSub ? "含" : "无"} />
+        {/* 算式参数 */}
+        <div className="space-y-3 rounded-md border border-border bg-card p-3">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            算式参数
           </div>
-          <div className="mt-3 border-t border-border pt-2">
-            <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mb-1.5">启用模组</div>
-            <div className="flex flex-wrap gap-1">
-              {level.obstacles.map((o) => (
-                <span
-                  key={o}
-                  className="inline-flex items-center gap-1 rounded-sm border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
-                  title={OBSTACLES[o].desc}
-                >
-                  {OBSTACLES[o].name} <span className="font-mono-tabular text-[9px] text-primary">+{OBSTACLES[o].weight}</span>
-                </span>
-              ))}
-              {level.decoyCount > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-sm border border-destructive/30 bg-destructive/5 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
-                  干扰 ×{level.decoyCount}
-                </span>
-              )}
-            </div>
+          <ParamRow label="笔数">
+            {COUNT_OPTIONS.map((n) => (
+              <Chip key={n} active={cfg.count === n} onClick={() => updateCfg({ count: n })}>
+                {n}
+              </Chip>
+            ))}
+          </ParamRow>
+          <ParamRow label="位数">
+            {DIGIT_OPTIONS.map((n) => (
+              <Chip key={n} active={cfg.digits === n} onClick={() => updateCfg({ digits: n })}>
+                {n}
+              </Chip>
+            ))}
+          </ParamRow>
+          <ParamRow label="闪速">
+            {SPEED_OPTIONS.map((n) => (
+              <Chip key={n} active={cfg.speedMs === n} onClick={() => updateCfg({ speedMs: n })}>
+                {n}ms
+              </Chip>
+            ))}
+          </ParamRow>
+          <ParamRow label="减法">
+            <Chip active={!cfg.includeSub} onClick={() => updateCfg({ includeSub: false })}>纯加</Chip>
+            <Chip active={cfg.includeSub} onClick={() => updateCfg({ includeSub: true })}>含减</Chip>
+          </ParamRow>
+          <div className="flex items-center justify-between border-t border-border pt-2 text-[11px]">
+            <span className="text-muted-foreground">算式难度 Df</span>
+            <span className="font-mono-tabular font-semibold text-foreground">×{Df.toFixed(2)}</span>
           </div>
         </div>
 
-        {/* 设置 */}
-        <div className="rounded-md border border-border bg-muted/40 p-3 text-xs">
-          <label className="flex items-start gap-2 cursor-pointer">
+        {/* 干扰强度 */}
+        <div className="space-y-3 rounded-md border border-border bg-card p-3">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            干扰强度
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {CHAOS_ORDER.map((id) => {
+              const c = CHAOS_LEVELS[id];
+              const active = cfg.chaos === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => updateCfg({ chaos: id })}
+                  className={cn(
+                    "rounded-md border py-2 text-xs font-medium transition-colors",
+                    active
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground",
+                  )}
+                >
+                  <div>{c.name}</div>
+                  <div className="mt-0.5 font-mono-tabular text-[10px] opacity-70">×{c.multiplier}</div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="text-[11px] leading-relaxed text-muted-foreground">
+            {chaos.desc}
+          </div>
+          <label className="flex items-start gap-2 cursor-pointer border-t border-border pt-2">
             <input
               type="checkbox"
-              checked={allowBlink}
-              onChange={(e) => setAllowBlink(e.target.checked)}
+              checked={cfg.blink}
+              onChange={(e) => updateCfg({ blink: e.target.checked })}
               className="mt-0.5 h-3.5 w-3.5 accent-primary"
             />
             <div className="flex-1">
-              <div className="flex items-center gap-1 font-medium text-foreground">
-                启用闪屏间隔（M4）
+              <div className="flex items-center gap-1 text-[11px] font-medium text-foreground">
+                额外启用闪屏间隔
                 <AlertTriangle className="h-3 w-3 text-amber-500" />
+                <span className="ml-1 font-mono-tabular text-[10px] text-primary">+0.20</span>
               </div>
-              <div className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
-                数字之间穿插短暂闪屏（≤120ms 低对比），增强视觉抑制训练。
-                光敏体质或视觉疲劳时请关闭。
+              <div className="mt-0.5 text-[10px] leading-relaxed text-muted-foreground">
+                数字之间穿插短暂闪屏，光敏体质请关闭。
               </div>
             </div>
           </label>
+          <div className="flex items-center justify-between border-t border-border pt-2 text-[11px]">
+            <span className="text-muted-foreground">干扰系数 Dc</span>
+            <span className="font-mono-tabular font-semibold text-foreground">×{Dc.toFixed(2)}</span>
+          </div>
+        </div>
+
+        {/* 总难度 + 预估分 */}
+        <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-muted-foreground">总难度 D = Df × Dc</span>
+            <span className="font-mono-tabular text-base font-semibold text-primary">×{D.toFixed(2)}</span>
+          </div>
+          <div className="mt-1.5 flex items-center justify-between border-t border-primary/20 pt-1.5">
+            <span className="text-[11px] text-muted-foreground">本局答对最高可得</span>
+            <span className="font-mono-tabular text-lg font-semibold text-primary">{maxScore} 分</span>
+          </div>
         </div>
 
         <Button onClick={begin}>
-          <Play className="mr-2 h-3.5 w-3.5" /> 开始 L{level.level} 挑战
+          <Play className="mr-2 h-3.5 w-3.5" /> 开始挑战
         </Button>
-
-        <div className="rounded-md border border-border bg-card p-2.5 text-[11px] leading-relaxed text-muted-foreground">
-          <div className="flex items-center justify-between">
-            <span>本局答对最高可得</span>
-            <span className="font-mono-tabular text-base font-semibold text-primary">
-              {Math.round((1000 + 200) * level.difficulty)} 分
-            </span>
-          </div>
-        </div>
       </div>
     );
   }
@@ -266,7 +321,7 @@ export function GauntletFlashGame({ onFinished }: { onFinished?: () => void }) {
     return (
       <div className="flex h-[360px] flex-col items-center justify-center">
         <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-3">
-          L{level.level} · D={level.difficulty}
+          {chaos.name} · D=×{D.toFixed(2)}
         </div>
         <div className="font-mono-tabular text-7xl font-semibold text-primary animate-pop-in">GO</div>
         <div className="mt-3 text-xs text-muted-foreground">注意力集中，准备追踪</div>
@@ -282,7 +337,7 @@ export function GauntletFlashGame({ onFinished }: { onFinished?: () => void }) {
     return (
       <div className="flex flex-col items-center gap-3">
         <div className="flex w-full items-center justify-between text-[11px] text-muted-foreground">
-          <span className="font-mono-tabular">L{level.level}</span>
+          <span className="font-mono-tabular">{cfg.count}×{cfg.digits} · {cfg.speedMs}ms · {chaos.name}</span>
           <span className="font-mono-tabular">{realTermPassed} / {totalRealTerms}</span>
           <button onClick={reset} className="hover:text-destructive">放弃</button>
         </div>
@@ -292,7 +347,7 @@ export function GauntletFlashGame({ onFinished }: { onFinished?: () => void }) {
             style={{ width: `${(realTermPassed / totalRealTerms) * 100}%` }}
           />
         </div>
-        <Stage item={item} obstacles={level.obstacles} />
+        <Stage item={item} chaos={chaos} />
       </div>
     );
   }
@@ -337,7 +392,7 @@ export function GauntletFlashGame({ onFinished }: { onFinished?: () => void }) {
         </div>
         <div className="text-center">
           <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            {result.correct ? `L${level.level} 完成` : "错误"}
+            {result.correct ? "完成" : "错误"}
           </div>
           <div className="mt-0.5 font-mono-tabular text-5xl font-semibold text-foreground">
             {result.correct ? `+${result.score}` : "0"}
@@ -377,7 +432,7 @@ export function GauntletFlashGame({ onFinished }: { onFinished?: () => void }) {
         </div>
         <div className="flex w-full gap-2">
           <Button variant="outline" onClick={reset} className="flex-1" size="sm">
-            选等级
+            改参数
           </Button>
           <Button onClick={begin} className="flex-1" size="sm">
             <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> 再来一局
@@ -389,35 +444,37 @@ export function GauntletFlashGame({ onFinished }: { onFinished?: () => void }) {
   return null;
 }
 
-// ─── 序列构建：把 problem.terms 与障碍模组编织为播放序列 ───
-function buildSequence(p: Problem, lv: LevelConfig, allowBlink: boolean): FlashItem[] {
+// ─── 序列构建 ───
+function buildSequence(p: Problem, cfg: GauntletConfig, chaos: ChaosSpec): FlashItem[] {
   const out: FlashItem[] = [];
-  const useDrift = lv.obstacles.includes("drift");
-  const useSize = lv.obstacles.includes("size");
-  const useColor = lv.obstacles.includes("color");
-  const useBlink = lv.obstacles.includes("blink") && allowBlink;
-  const decoyCount = lv.obstacles.includes("decoy") ? lv.decoyCount : 0;
+  const useDrift = chaos.obstacles.includes("drift");
+  const useSize = chaos.obstacles.includes("size");
+  const useColor = chaos.colorReverse;
+  const decoyCount = chaos.decoyCount;
 
-  const blankMs = useBlink ? Math.min(120, Math.max(80, lv.speedMs * 0.18)) : 0;
-  const showMs = lv.speedMs - blankMs;
+  const blankMs = cfg.blink ? Math.min(140, Math.max(80, cfg.speedMs * 0.18)) : 0;
+  const showMs = cfg.speedMs - blankMs;
 
-  // 决定 decoy 插在哪些 term 之前（避免开头与结尾紧邻）
+  // 决定 decoy 插在哪些 term 之前（避开开头）
   const decoyPositions = new Set<number>();
-  while (decoyPositions.size < decoyCount && p.terms.length > 2) {
-    const pos = 1 + Math.floor(Math.random() * (p.terms.length - 1));
-    decoyPositions.add(pos);
+  if (p.terms.length > 2) {
+    let guard = 0;
+    while (decoyPositions.size < decoyCount && guard++ < 50) {
+      const pos = 1 + Math.floor(Math.random() * (p.terms.length - 1));
+      decoyPositions.add(pos);
+    }
   }
 
+  const driftPad = (1 - chaos.driftRange) / 2;
   const rndPos = () => ({
-    x: useDrift ? 0.15 + Math.random() * 0.7 : 0.5,
-    y: useDrift ? 0.2 + Math.random() * 0.6 : 0.5,
+    x: useDrift ? driftPad + Math.random() * chaos.driftRange : 0.5,
+    y: useDrift ? driftPad + Math.random() * chaos.driftRange : 0.5,
   });
-  const rndScale = () => (useSize ? 0.7 + Math.random() * 0.6 : 1);
+  const rndScale = () => (useSize ? 1 - chaos.sizeJitter + Math.random() * chaos.sizeJitter * 2 : 1);
 
   for (let i = 0; i < p.terms.length; i++) {
     if (decoyPositions.has(i)) {
-      // decoy: 一个不该被算的灰色斜体数字
-      const decoyVal = randDistinctNumber(lv.digits, p.terms);
+      const decoyVal = randDistinctNumber(cfg.digits, p.terms);
       const pos = rndPos();
       out.push({
         kind: "decoy",
@@ -430,22 +487,16 @@ function buildSequence(p: Problem, lv: LevelConfig, allowBlink: boolean): FlashI
       if (blankMs > 0) out.push({ kind: "blank", durationMs: blankMs });
     }
     const signRaw = p.signs[i];
-    // M6 颜色反转：随机 30% 概率把这个数字标橙，并把符号反转用于呈现
     let colorClass: "blue" | "orange" = "blue";
-    let signEffective = signRaw;
     if (useColor && Math.random() < 0.35) {
+      // 视觉提示：橙色项需要"心算时警觉"——但不改实际答案（保持公平）
       colorClass = "orange";
-      // 在橙色规则下，玩家看到的需要"自己反转回去"——所以 effective 显示原 sign 反转
-      // 即：屏幕上仍显示数字与原 sign，颜色提示玩家心算时把符号反转
-      // 不修改 problem.answer（已按 raw 算）
-      signEffective = signRaw; // 视觉显示不变，颜色提示规则
     }
     const pos = rndPos();
     out.push({
       kind: "term",
       value: p.terms[i],
       signRaw,
-      signEffective,
       colorClass,
       fontScale: rndScale(),
       x: pos.x,
@@ -459,12 +510,6 @@ function buildSequence(p: Problem, lv: LevelConfig, allowBlink: boolean): FlashI
   return out;
 }
 
-// 颜色反转规则下重算正确答案
-// 注意：buildSequence 仅做视觉标记，实际 problem.answer 仍是原始符号求和。
-// 如果你希望"橙色 = 反转"是真规则（影响答案），需要在生成 sequence 后重算 answer。
-// 当前选择：橙色仅是干扰提示（"看到橙色要警觉"），但不改答案——这样 L8+ 颜色模组的本质是
-// 视觉负担 + 抑制反应（"看到橙色不要被骗"）。
-
 function randDistinctNumber(digits: number, exclude: number[]): number {
   for (let tries = 0; tries < 20; tries++) {
     const min = digits === 1 ? 0 : Math.pow(10, digits - 1);
@@ -475,19 +520,19 @@ function randDistinctNumber(digits: number, exclude: number[]): number {
   return Math.pow(10, digits - 1);
 }
 
-// ─── 舞台：渲染单个 item，叠加噪点背景 ───
-function Stage({ item, obstacles }: { item: FlashItem; obstacles: ObstacleId[] }) {
-  const useNoise = obstacles.includes("noise");
+// ─── 舞台 ───
+function Stage({ item, chaos }: { item: FlashItem; chaos: ChaosSpec }) {
+  const useNoise = chaos.obstacles.includes("noise");
   const noiseDigits = useMemo(() => {
     if (!useNoise) return [];
-    return Array.from({ length: 24 }).map(() => ({
+    return Array.from({ length: chaos.noiseCount }).map(() => ({
       d: Math.floor(Math.random() * 10),
       x: Math.random() * 100,
       y: Math.random() * 100,
-      s: 0.6 + Math.random() * 1.2,
-      r: -20 + Math.random() * 40,
+      s: 0.5 + Math.random() * 1.5,
+      r: -25 + Math.random() * 50,
     }));
-  }, [item, useNoise]);
+  }, [item, useNoise, chaos.noiseCount]);
 
   const isBlank = item.kind === "blank";
   return (
@@ -497,16 +542,16 @@ function Stage({ item, obstacles }: { item: FlashItem; obstacles: ObstacleId[] }
         isBlank ? "bg-muted" : "bg-foreground",
       )}
     >
-      {/* 噪点背景 */}
       {useNoise && !isBlank && (
         <div className="pointer-events-none absolute inset-0 select-none">
           {noiseDigits.map((n, i) => (
             <span
               key={i}
-              className="absolute font-mono-tabular text-3xl font-bold text-background/[0.07]"
+              className="absolute font-mono-tabular text-3xl font-bold"
               style={{
                 left: `${n.x}%`,
                 top: `${n.y}%`,
+                color: `hsl(0 0% 100% / ${chaos.noiseOpacity})`,
                 transform: `translate(-50%, -50%) scale(${n.s}) rotate(${n.r}deg)`,
               }}
             >
@@ -516,7 +561,6 @@ function Stage({ item, obstacles }: { item: FlashItem; obstacles: ObstacleId[] }
         </div>
       )}
 
-      {/* 主数字 / 干扰数字 */}
       {!isBlank && item.value != null && (
         <div
           className="absolute flex items-center gap-2"
@@ -531,7 +575,6 @@ function Stage({ item, obstacles }: { item: FlashItem; obstacles: ObstacleId[] }
               className={cn(
                 "text-background/80",
                 item.colorClass === "orange" && "text-orange-400",
-                item.colorClass === "blue" && "text-sky-300",
               )}
               strokeWidth={3}
               style={{ width: 48 * (item.fontScale ?? 1), height: 48 * (item.fontScale ?? 1) }}
@@ -544,8 +587,6 @@ function Stage({ item, obstacles }: { item: FlashItem; obstacles: ObstacleId[] }
                 ? "italic text-background/30"
                 : item.colorClass === "orange"
                 ? "text-orange-400"
-                : item.colorClass === "blue"
-                ? "text-sky-200"
                 : "text-background",
             )}
             style={{ fontSize: `${(item.fontScale ?? 1) * 96}px`, lineHeight: 1 }}
@@ -558,11 +599,27 @@ function Stage({ item, obstacles }: { item: FlashItem; obstacles: ObstacleId[] }
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function ParamRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <div className="text-[9px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
-      <div className="mt-0.5 font-mono-tabular text-base font-semibold">{value}</div>
+    <div className="flex items-center gap-2">
+      <span className="w-10 shrink-0 text-[11px] text-muted-foreground">{label}</span>
+      <div className="flex flex-wrap gap-1">{children}</div>
     </div>
+  );
+}
+
+function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "rounded-md border px-2.5 py-1 font-mono-tabular text-[11px] font-medium transition-colors",
+        active
+          ? "border-primary bg-primary/5 text-primary"
+          : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground",
+      )}
+    >
+      {children}
+    </button>
   );
 }
