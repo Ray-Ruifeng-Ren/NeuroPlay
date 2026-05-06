@@ -465,10 +465,14 @@ function buildSequence(p: Problem, cfg: GauntletConfig, chaos: ChaosSpec): Flash
     }
   }
 
-  const driftPad = (1 - chaos.driftRange) / 2;
+  // 安全边距：数字最大字号 96px×1.5 ≈ 144px，舞台高 360px，宽度按数字位数大致同量级。
+  // 用 0.18 的归一化内边距，保证整个字形落在框内（即使在最大缩放下）。
+  const SAFE_PAD = 0.18;
+  const safeRange = Math.min(chaos.driftRange, 1 - SAFE_PAD * 2);
+  const safeStart = (1 - safeRange) / 2;
   const rndPos = () => ({
-    x: useDrift ? driftPad + Math.random() * chaos.driftRange : 0.5,
-    y: useDrift ? driftPad + Math.random() * chaos.driftRange : 0.5,
+    x: useDrift ? safeStart + Math.random() * safeRange : 0.5,
+    y: useDrift ? safeStart + Math.random() * safeRange : 0.5,
   });
   const rndScale = () => (useSize ? 1 - chaos.sizeJitter + Math.random() * chaos.sizeJitter * 2 : 1);
 
@@ -527,9 +531,9 @@ function Stage({ item, chaos }: { item: FlashItem; chaos: ChaosSpec }) {
     if (!useNoise) return [];
     return Array.from({ length: chaos.noiseCount }).map(() => ({
       d: Math.floor(Math.random() * 10),
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      s: 0.5 + Math.random() * 1.5,
+      x: 6 + Math.random() * 88, // 留 6% 内边距，避免噪点贴边/出框
+      y: 8 + Math.random() * 84,
+      s: 0.5 + Math.random() * 1.3,
       r: -25 + Math.random() * 50,
     }));
   }, [item, useNoise, chaos.noiseCount]);
