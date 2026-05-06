@@ -45,7 +45,7 @@ const Play = () => {
     game.id === "nback" ? `${nbackCfg.n}-back-${nbackCfg.trials}` :
     game.id === "cards" ? "deck52" :
     game.id === "orbit" ? orbitMode :
-    game.id === "gauntlet" ? gauntletMode :
+    game.id === "gauntlet" ? (gauntletView === "overall" ? "overall" : encodeMode(gauntletCfg)) :
     "default";
 
   return (
