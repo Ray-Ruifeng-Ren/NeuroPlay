@@ -338,7 +338,7 @@ export function FlashMathGame({
                 </button>
               ))}
               <span className="text-[10px] text-muted-foreground">或</span>
-              <NumInput value={cfg.count} onChange={(n) => setCfg({ ...cfg, count: n })} min={1} max={200} suffix="笔" />
+              <NumInput value={[5,10,15,20,30].includes(cfg.count) ? null : cfg.count} onChange={(n) => setCfg({ ...cfg, count: n })} min={1} max={200} suffix="笔" />
             </div>
           </ConfigItem>
           <ConfigItem label="位数" hint="1 – 7 位">
@@ -358,7 +358,7 @@ export function FlashMathGame({
                 </button>
               ))}
               <span className="text-[10px] text-muted-foreground">或</span>
-              <NumInput value={cfg.digits} onChange={(n) => setCfg({ ...cfg, digits: n })} min={1} max={7} suffix="位" />
+              <NumInput value={[1,2,3,4,5].includes(cfg.digits) ? null : cfg.digits} onChange={(n) => setCfg({ ...cfg, digits: n })} min={1} max={7} suffix="位" />
             </div>
           </ConfigItem>
           <ConfigItem label="单笔时间" hint="0.15 – 5 秒">
@@ -384,7 +384,7 @@ export function FlashMathGame({
                 </button>
               ))}
               <span className="text-[10px] text-muted-foreground">或</span>
-              <SecInput value={cfg.speedMs} onChange={(n) => setCfg({ ...cfg, speedMs: n })} min={150} max={5000} />
+              <SecInput value={[100,300,500,1000,1500].includes(cfg.speedMs) ? null : cfg.speedMs} onChange={(n) => setCfg({ ...cfg, speedMs: n })} min={150} max={5000} />
             </div>
           </ConfigItem>
           <ConfigItem label="减法" hint="至多一个减号">
