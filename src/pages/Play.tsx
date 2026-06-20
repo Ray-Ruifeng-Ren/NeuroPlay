@@ -66,16 +66,18 @@ const Play = () => {
       </header>
 
       <section className="border-b border-border bg-card">
-        <div className="container py-7">
+        <div className="container py-3 md:py-4">
           <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">{game.tagline}</div>
-          <h1 className="mt-1 font-display text-3xl leading-tight">{game.name}</h1>
-          <p className="mt-1.5 max-w-prose text-sm text-muted-foreground">{game.description}</p>
+          <div className="mt-0.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h1 className="font-display text-2xl leading-tight">{game.name}</h1>
+            <p className="max-w-prose text-xs text-muted-foreground">{game.description}</p>
+          </div>
         </div>
       </section>
 
-      <main className="container py-6 md:py-8">
+      <main className="container py-3 md:py-4">
         {game.id === "flashmath" && (
-          <div className="mb-6">
+          <div className="mb-3">
             <PracticeStats game="flashmath" refreshKey={refreshKey} />
           </div>
         )}
@@ -100,8 +102,8 @@ const Play = () => {
           </div>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-          <div className="rounded-md border border-border bg-card p-5 md:p-6">
+        <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+          <div className="rounded-md border border-border bg-card p-4 md:p-5">
             {game.id === "schulte" && <SchulteGame size={schulteSize} onFinished={handleFinished} />}
             {game.id === "reaction" && <ReactionGame onFinished={handleFinished} />}
             {game.id === "flashmath" && (
@@ -176,20 +178,19 @@ const Play = () => {
                 </button>
               </div>
             )}
-            <ProLeaderboard game={game.id} mode={mode} refreshKey={refreshKey} />
+            {game.id === "flashmath" ? (
+              <PracticeLog
+                game="flashmath"
+                refreshKey={refreshKey}
+                mistakeMode={flashMistakeMode}
+                onMistakeModeChange={setFlashMistakeMode}
+                extraTab={<ProLeaderboard game={game.id} mode={mode} refreshKey={refreshKey} />}
+              />
+            ) : (
+              <ProLeaderboard game={game.id} mode={mode} refreshKey={refreshKey} />
+            )}
           </aside>
         </div>
-
-        {game.id === "flashmath" && (
-          <div className="mt-6">
-            <PracticeLog
-              game="flashmath"
-              refreshKey={refreshKey}
-              mistakeMode={flashMistakeMode}
-              onMistakeModeChange={setFlashMistakeMode}
-            />
-          </div>
-        )}
       </main>
     </div>
   );
