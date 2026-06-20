@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Flame, Hash, Target, CalendarDays, PlayCircle } from "lucide-react";
+import { Flame, Hash, Target, CalendarDays } from "lucide-react";
 import { fetchAttempts, groupByDay, type AttemptRow } from "@/lib/practiceLog";
 
 interface Props {
