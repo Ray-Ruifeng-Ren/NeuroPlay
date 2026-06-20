@@ -74,6 +74,12 @@ const Play = () => {
       </section>
 
       <main className="container py-6 md:py-8">
+        {game.id === "flashmath" && (
+          <div className="mb-6">
+            <PracticeStats game="flashmath" refreshKey={refreshKey} />
+          </div>
+        )}
+
         {game.id === "schulte" && (
           <div className="mb-5 flex flex-wrap items-center gap-1.5">
             <span className="mr-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">难度</span>
