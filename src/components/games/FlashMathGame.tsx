@@ -330,7 +330,7 @@ export function FlashMathGame({
               <NumInput value={cfg.digits} onChange={(n) => setCfg({ ...cfg, digits: n })} min={1} max={7} suffix="位" />
             </div>
           </ConfigItem>
-          <ConfigItem label="单笔时间" hint="150 – 5000 ms">
+          <ConfigItem label="单笔时间" hint="0.15 – 5 秒">
             <div className="flex flex-wrap items-center gap-1">
               {[
                 { label: "0.1秒", value: 100 },
@@ -353,7 +353,7 @@ export function FlashMathGame({
                 </button>
               ))}
               <span className="text-[10px] text-muted-foreground">或</span>
-              <NumInput value={cfg.speedMs} onChange={(n) => setCfg({ ...cfg, speedMs: n })} min={150} max={5000} suffix="ms" />
+              <SecInput value={cfg.speedMs} onChange={(n) => setCfg({ ...cfg, speedMs: n })} min={150} max={5000} />
             </div>
           </ConfigItem>
           <ConfigItem label="减法" hint="至多一个减号">
