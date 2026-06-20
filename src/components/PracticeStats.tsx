@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Flame, Hash, Target, CalendarDays, PlayCircle } from "lucide-react";
+import { Flame, Hash, Target, CalendarDays } from "lucide-react";
 import { fetchAttempts, groupByDay, type AttemptRow } from "@/lib/practiceLog";
 
 interface Props {
@@ -22,9 +22,9 @@ export function PracticeStats({ game, refreshKey }: Props) {
     return () => { live = false; };
   }, [game, refreshKey]);
 
-  const { streak, total, accuracy, distinctDays, sessions } = useMemo(() => {
+  const { streak, total, accuracy, distinctDays } = useMemo(() => {
     if (rows.length === 0)
-      return { streak: 0, total: 0, accuracy: 0, distinctDays: 0, sessions: 0 };
+      return { streak: 0, total: 0, accuracy: 0, distinctDays: 0 };
     const byDay = groupByDay(rows);
     let total = 0, correct = 0;
     for (const r of rows) {
@@ -32,26 +32,6 @@ export function PracticeStats({ game, refreshKey }: Props) {
       if (r.correct) correct += 1;
     }
     const distinctDays = byDay.size;
-
-    // sessions: sorted by time; new session if gap > 30 min or mode changes
-    const sorted = [...rows].sort(
-      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    );
-    let sessions = 0;
-    let lastTime = 0;
-    let lastMode = "";
-    for (const r of sorted) {
-      const t = new Date(r.created_at).getTime();
-      if (
-        sessions === 0 ||
-        t - lastTime > 30 * 60 * 1000 ||
-        r.mode !== lastMode
-      ) {
-        sessions += 1;
-      }
-      lastTime = t;
-      lastMode = r.mode;
-    }
 
     // streak: consecutive days ending today (or yesterday if today empty)
     const has = (d: Date) => {
@@ -71,12 +51,11 @@ export function PracticeStats({ game, refreshKey }: Props) {
       total,
       accuracy: Math.round((correct / total) * 100),
       distinctDays,
-      sessions,
     };
   }, [rows]);
 
   return (
-    <div className="grid grid-cols-5 gap-2 md:gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
       <Metric
         icon={<Flame className="h-3.5 w-3.5" />}
         label="连续天数"
@@ -89,12 +68,6 @@ export function PracticeStats({ game, refreshKey }: Props) {
         label="练习天数"
         value={loading ? "—" : String(distinctDays)}
         suffix="天"
-      />
-      <Metric
-        icon={<PlayCircle className="h-3.5 w-3.5" />}
-        label="累计次数"
-        value={loading ? "—" : String(sessions)}
-        suffix="次"
       />
       <Metric
         icon={<Hash className="h-3.5 w-3.5" />}
