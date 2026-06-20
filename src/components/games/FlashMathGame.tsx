@@ -141,7 +141,7 @@ export function FlashMathGame({
   onCfgChange?: (cfg: FlashCfg) => void;
   mistakeMode?: boolean;
 }) {
-  const [cfg, setCfg] = useState<FlashCfg>(DEFAULT_CFG);
+  const [cfg, setCfg] = useState<FlashCfg>(() => loadStoredCfg());
   const [phase, setPhase] = useState<Phase>("config");
   const [problem, setProblem] = useState<Problem | null>(null);
   const [stepIdx, setStepIdx] = useState(0);
@@ -153,6 +153,13 @@ export function FlashMathGame({
   const timerRef = useRef<number | null>(null);
 
   useEffect(() => onCfgChange?.(cfg), [cfg, onCfgChange]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(CFG_STORAGE_KEY, JSON.stringify(cfg));
+    } catch {}
+  }, [cfg]);
 
   const submit = async (raw: string) => {
     const value = parseSpokenNumber(raw);
