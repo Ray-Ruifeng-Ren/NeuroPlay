@@ -134,17 +134,17 @@ function NumInput({
 }
 
 function SecInput({
-  value, onChange, min, max,
-}: { value: number; onChange: (n: number) => void; min: number; max: number }) {
-  const [text, setText] = useState(String(value / 1000));
-  useEffect(() => setText(String(value / 1000)), [value]);
+  value, onChange, min, max, placeholder,
+}: { value: number | null; onChange: (n: number) => void; min: number; max: number; placeholder?: string }) {
+  const [text, setText] = useState(value != null ? String(value / 1000) : "");
+  useEffect(() => setText(value != null ? String(value / 1000) : ""), [value]);
   const commit = (s: string) => {
     const n = parseFloat(s);
     if (Number.isFinite(n)) {
       const ms = Math.round(Math.min(max, Math.max(min, n * 1000)));
       onChange(ms);
     } else {
-      setText(String(value / 1000));
+      setText(value != null ? String(value / 1000) : "");
     }
   };
   return (
@@ -152,10 +152,11 @@ function SecInput({
       <Input
         inputMode="decimal"
         value={text}
+        placeholder={placeholder}
         onChange={(e) => setText(e.target.value)}
         onBlur={(e) => commit(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-        className="h-7 w-16 rounded-md border-border bg-background px-1 py-0 text-center font-mono-tabular text-[11px] font-medium"
+        className="h-7 w-12 rounded-md border-border bg-background px-1 py-0 text-center font-mono-tabular text-[11px] font-medium"
       />
       <span className="text-[10px] text-muted-foreground">秒</span>
     </div>
