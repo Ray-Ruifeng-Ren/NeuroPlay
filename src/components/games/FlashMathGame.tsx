@@ -5,8 +5,9 @@ import { cn } from "@/lib/utils";
 import { submitScore } from "@/lib/leaderboard";
 import { buildProblem, type Problem } from "@/lib/flashMath";
 import { parseSpokenNumber } from "@/lib/parseSpokenNumber";
-import { Mic, MicOff, Play, RotateCcw, Settings2, Check, X, Minus } from "lucide-react";
+import { Mic, MicOff, Play, RotateCcw, Settings2, Check, X, Minus, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { logAttempt, fetchWrongAttempts } from "@/lib/practiceLog";
 
 type Phase = "config" | "ready" | "playing" | "answer" | "result";
 
