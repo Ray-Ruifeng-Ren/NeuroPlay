@@ -117,9 +117,11 @@ function NumInput({
 export function FlashMathGame({
   onFinished,
   onCfgChange,
+  mistakeMode = false,
 }: {
   onFinished?: () => void;
   onCfgChange?: (cfg: FlashCfg) => void;
+  mistakeMode?: boolean;
 }) {
   const [cfg, setCfg] = useState<FlashCfg>(DEFAULT_CFG);
   const [phase, setPhase] = useState<Phase>("config");
@@ -128,6 +130,8 @@ export function FlashMathGame({
   const [showTerm, setShowTerm] = useState(true);
   const [input, setInput] = useState("");
   const [result, setResult] = useState<{ correct: boolean; score: number; answered: number } | null>(null);
+  const [isReplay, setIsReplay] = useState(false);
+  const startTimeRef = useRef<number>(0);
   const timerRef = useRef<number | null>(null);
 
   useEffect(() => onCfgChange?.(cfg), [cfg, onCfgChange]);
@@ -135,12 +139,26 @@ export function FlashMathGame({
   const submit = async (raw: string) => {
     const value = parseSpokenNumber(raw);
     if (value == null || !problem) return;
+    const usedMs = Date.now() - startTimeRef.current;
     const correct = value === problem.answer;
     const score = computeScore(cfg, correct);
     setResult({ correct, score, answered: value });
     setPhase("result");
+
+    // Log every attempt (correct or wrong) for practice journal & mistake book.
+    const mode = `${cfg.count}q-${cfg.digits}d${cfg.includeSub ? "-sub" : ""}`;
+    logAttempt({
+      game: "flashmath",
+      mode,
+      terms: problem.terms,
+      signs: problem.signs,
+      answer: problem.answer,
+      userAnswer: value,
+      correct,
+      usedMs,
+    });
+
     if (correct) {
-      const mode = `${cfg.count}q-${cfg.digits}d${cfg.includeSub ? "-sub" : ""}`;
       const r = await submitScore({
         game: "flashmath",
         mode,
@@ -150,8 +168,8 @@ export function FlashMathGame({
       if (!r.ok && r.error === "未登录") {
         toast({ title: "登录后即可上榜", description: "本局成绩未保存到云端。" });
       }
-      onFinished?.();
     }
+    onFinished?.();
   };
 
   const speech = useSpeech((txt) => {
@@ -167,10 +185,32 @@ export function FlashMathGame({
     setInput("");
     setResult(null);
     setStepIdx(0);
+    setIsReplay(false);
   };
 
-  const beginCountdown = () => {
-    setProblem(buildProblem(cfg.count, cfg.digits, cfg.includeSub));
+  const beginCountdown = async () => {
+    let problem: Problem | null = null;
+    let replay = false;
+
+    if (mistakeMode) {
+      const wrong = await fetchWrongAttempts("flashmath", 50);
+      if (wrong.length === 0) {
+        toast({ title: "没有错题可以练", description: "请关闭「只练错题」开关。" });
+        return;
+      }
+      const w = wrong[Math.floor(Math.random() * wrong.length)];
+      problem = {
+        terms: w.terms,
+        signs: w.signs as ("+" | "-")[],
+        answer: w.answer,
+      };
+      replay = true;
+    } else {
+      problem = buildProblem(cfg.count, cfg.digits, cfg.includeSub);
+    }
+
+    setProblem(problem);
+    setIsReplay(replay);
     setStepIdx(0);
     setInput("");
     setResult(null);
