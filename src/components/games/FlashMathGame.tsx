@@ -19,6 +19,24 @@ export interface FlashCfg {
 }
 
 const DEFAULT_CFG: FlashCfg = { count: 5, digits: 2, speedMs: 700, includeSub: false };
+const CFG_STORAGE_KEY = "flashmath:lastCfg";
+
+function loadStoredCfg(): FlashCfg {
+  if (typeof window === "undefined") return DEFAULT_CFG;
+  try {
+    const raw = window.localStorage.getItem(CFG_STORAGE_KEY);
+    if (!raw) return DEFAULT_CFG;
+    const p = JSON.parse(raw);
+    return {
+      count: Math.min(200, Math.max(1, Number(p.count) || DEFAULT_CFG.count)),
+      digits: Math.min(7, Math.max(1, Number(p.digits) || DEFAULT_CFG.digits)),
+      speedMs: Math.min(5000, Math.max(150, Number(p.speedMs) || DEFAULT_CFG.speedMs)),
+      includeSub: !!p.includeSub,
+    };
+  } catch {
+    return DEFAULT_CFG;
+  }
+}
 
 // 参考世界珠算心算联合会 / 中国珠协比赛规则的近似积分体系：
 // 总分 = round( 笔数 × 位数权重 × 速度系数 × 减法系数 )
