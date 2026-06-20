@@ -108,24 +108,25 @@ function useSpeech(onFinal: (text: string) => void) {
 }
 
 function NumInput({
-  value, onChange, min, max, suffix,
-}: { value: number; onChange: (n: number) => void; min: number; max: number; suffix?: string }) {
-  const [text, setText] = useState(String(value));
-  useEffect(() => setText(String(value)), [value]);
+  value, onChange, min, max, suffix, placeholder,
+}: { value: number | null; onChange: (n: number) => void; min: number; max: number; suffix?: string; placeholder?: string }) {
+  const [text, setText] = useState(value != null ? String(value) : "");
+  useEffect(() => setText(value != null ? String(value) : ""), [value]);
   const commit = (s: string) => {
     const n = parseInt(s.replace(/\D/g, ""), 10);
     if (Number.isFinite(n)) onChange(Math.min(max, Math.max(min, n)));
-    else setText(String(value));
+    else setText(value != null ? String(value) : "");
   };
   return (
     <div className="flex items-center gap-1.5">
       <Input
         inputMode="numeric"
         value={text}
+        placeholder={placeholder}
         onChange={(e) => setText(e.target.value)}
         onBlur={(e) => commit(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-        className="h-7 w-16 rounded-md border-border bg-background px-1 py-0 text-center font-mono-tabular text-[11px] font-medium"
+        className="h-7 w-12 rounded-md border-border bg-background px-1 py-0 text-center font-mono-tabular text-[11px] font-medium"
       />
       {suffix && <span className="text-[10px] text-muted-foreground">{suffix}</span>}
     </div>
@@ -133,17 +134,17 @@ function NumInput({
 }
 
 function SecInput({
-  value, onChange, min, max,
-}: { value: number; onChange: (n: number) => void; min: number; max: number }) {
-  const [text, setText] = useState(String(value / 1000));
-  useEffect(() => setText(String(value / 1000)), [value]);
+  value, onChange, min, max, placeholder,
+}: { value: number | null; onChange: (n: number) => void; min: number; max: number; placeholder?: string }) {
+  const [text, setText] = useState(value != null ? String(value / 1000) : "");
+  useEffect(() => setText(value != null ? String(value / 1000) : ""), [value]);
   const commit = (s: string) => {
     const n = parseFloat(s);
     if (Number.isFinite(n)) {
       const ms = Math.round(Math.min(max, Math.max(min, n * 1000)));
       onChange(ms);
     } else {
-      setText(String(value / 1000));
+      setText(value != null ? String(value / 1000) : "");
     }
   };
   return (
@@ -151,10 +152,11 @@ function SecInput({
       <Input
         inputMode="decimal"
         value={text}
+        placeholder={placeholder}
         onChange={(e) => setText(e.target.value)}
         onBlur={(e) => commit(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-        className="h-7 w-16 rounded-md border-border bg-background px-1 py-0 text-center font-mono-tabular text-[11px] font-medium"
+        className="h-7 w-12 rounded-md border-border bg-background px-1 py-0 text-center font-mono-tabular text-[11px] font-medium"
       />
       <span className="text-[10px] text-muted-foreground">秒</span>
     </div>
@@ -336,7 +338,7 @@ export function FlashMathGame({
                 </button>
               ))}
               <span className="text-[10px] text-muted-foreground">或</span>
-              <NumInput value={cfg.count} onChange={(n) => setCfg({ ...cfg, count: n })} min={1} max={200} suffix="笔" />
+              <NumInput value={[5,10,15,20,30].includes(cfg.count) ? null : cfg.count} onChange={(n) => setCfg({ ...cfg, count: n })} min={1} max={200} suffix="笔" />
             </div>
           </ConfigItem>
           <ConfigItem label="位数" hint="1 – 7 位">
@@ -356,7 +358,7 @@ export function FlashMathGame({
                 </button>
               ))}
               <span className="text-[10px] text-muted-foreground">或</span>
-              <NumInput value={cfg.digits} onChange={(n) => setCfg({ ...cfg, digits: n })} min={1} max={7} suffix="位" />
+              <NumInput value={[1,2,3,4,5].includes(cfg.digits) ? null : cfg.digits} onChange={(n) => setCfg({ ...cfg, digits: n })} min={1} max={7} suffix="位" />
             </div>
           </ConfigItem>
           <ConfigItem label="单笔时间" hint="0.15 – 5 秒">
@@ -382,7 +384,7 @@ export function FlashMathGame({
                 </button>
               ))}
               <span className="text-[10px] text-muted-foreground">或</span>
-              <SecInput value={cfg.speedMs} onChange={(n) => setCfg({ ...cfg, speedMs: n })} min={150} max={5000} />
+              <SecInput value={[100,300,500,1000,1500].includes(cfg.speedMs) ? null : cfg.speedMs} onChange={(n) => setCfg({ ...cfg, speedMs: n })} min={150} max={5000} />
             </div>
           </ConfigItem>
           <ConfigItem label="减法" hint="至多一个减号">
