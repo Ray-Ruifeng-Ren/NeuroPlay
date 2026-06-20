@@ -172,6 +172,17 @@ const Play = () => {
             <ProLeaderboard game={game.id} mode={mode} refreshKey={refreshKey} />
           </aside>
         </div>
+
+        {game.id === "flashmath" && (
+          <div className="mt-6">
+            <PracticeLog
+              game="flashmath"
+              refreshKey={refreshKey}
+              mistakeMode={flashMistakeMode}
+              onMistakeModeChange={setFlashMistakeMode}
+            />
+          </div>
+        )}
       </main>
     </div>
   );
