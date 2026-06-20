@@ -108,24 +108,25 @@ function useSpeech(onFinal: (text: string) => void) {
 }
 
 function NumInput({
-  value, onChange, min, max, suffix,
-}: { value: number; onChange: (n: number) => void; min: number; max: number; suffix?: string }) {
-  const [text, setText] = useState(String(value));
-  useEffect(() => setText(String(value)), [value]);
+  value, onChange, min, max, suffix, placeholder,
+}: { value: number | null; onChange: (n: number) => void; min: number; max: number; suffix?: string; placeholder?: string }) {
+  const [text, setText] = useState(value != null ? String(value) : "");
+  useEffect(() => setText(value != null ? String(value) : ""), [value]);
   const commit = (s: string) => {
     const n = parseInt(s.replace(/\D/g, ""), 10);
     if (Number.isFinite(n)) onChange(Math.min(max, Math.max(min, n)));
-    else setText(String(value));
+    else setText(value != null ? String(value) : "");
   };
   return (
     <div className="flex items-center gap-1.5">
       <Input
         inputMode="numeric"
         value={text}
+        placeholder={placeholder}
         onChange={(e) => setText(e.target.value)}
         onBlur={(e) => commit(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-        className="h-7 w-16 rounded-md border-border bg-background px-1 py-0 text-center font-mono-tabular text-[11px] font-medium"
+        className="h-7 w-12 rounded-md border-border bg-background px-1 py-0 text-center font-mono-tabular text-[11px] font-medium"
       />
       {suffix && <span className="text-[10px] text-muted-foreground">{suffix}</span>}
     </div>
