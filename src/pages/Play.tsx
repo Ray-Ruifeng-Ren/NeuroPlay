@@ -104,7 +104,7 @@ const Play = () => {
         )}
 
         <div className="grid gap-3 lg:grid-cols-[1fr_560px]">
-          <div className="rounded-md border border-border bg-card p-3 md:p-4">
+          <div className="flex flex-col rounded-md border border-border bg-card p-3 md:p-4">
             {game.id === "schulte" && <SchulteGame size={schulteSize} onFinished={handleFinished} />}
             {game.id === "reaction" && <ReactionGame onFinished={handleFinished} />}
             {game.id === "flashmath" && (
