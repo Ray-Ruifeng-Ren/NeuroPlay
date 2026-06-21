@@ -13,7 +13,6 @@ import { DEFAULT_GAUNTLET, encodeMode, type GauntletConfig } from "@/lib/gauntle
 import { ProLeaderboard } from "@/components/ProLeaderboard";
 import { AccountMenu } from "@/components/AccountMenu";
 import { PracticeLog } from "@/components/PracticeLog";
-import { MistakeBook } from "@/components/MistakeBook";
 import { PracticeStats } from "@/components/PracticeStats";
 import { cn } from "@/lib/utils";
 
@@ -103,7 +102,7 @@ const Play = () => {
           </div>
         )}
 
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,480px)_1fr]">
+        <div className="grid gap-3 lg:grid-cols-[1fr_360px]">
           <div className="rounded-md border border-border bg-card p-3 md:p-4">
             {game.id === "schulte" && <SchulteGame size={schulteSize} onFinished={handleFinished} />}
             {game.id === "reaction" && <ReactionGame onFinished={handleFinished} />}
@@ -180,19 +179,13 @@ const Play = () => {
               </div>
             )}
             {game.id === "flashmath" ? (
-              <>
-                <PracticeLog
-                  game="flashmath"
-                  refreshKey={refreshKey}
-                  extraTab={<ProLeaderboard game={game.id} mode={mode} refreshKey={refreshKey} />}
-                />
-                <MistakeBook
-                  game="flashmath"
-                  refreshKey={refreshKey}
-                  mistakeMode={flashMistakeMode}
-                  onMistakeModeChange={setFlashMistakeMode}
-                />
-              </>
+              <PracticeLog
+                game="flashmath"
+                refreshKey={refreshKey}
+                mistakeMode={flashMistakeMode}
+                onMistakeModeChange={setFlashMistakeMode}
+                extraTab={<ProLeaderboard game={game.id} mode={mode} refreshKey={refreshKey} />}
+              />
             ) : (
               <ProLeaderboard game={game.id} mode={mode} refreshKey={refreshKey} />
             )}
