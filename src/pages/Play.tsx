@@ -119,7 +119,7 @@ const Play = () => {
             {game.id === "orbit" && <OrbitFocusGame onFinished={handleFinished} />}
             {game.id === "gauntlet" && <GauntletFlashGame onFinished={handleFinished} onCfgChange={setGauntletCfg} />}
           </div>
-          <aside className="space-y-3">
+          <aside className="space-y-3 lg:flex lg:flex-col">
             {game.id === "orbit" && (
               <div className="flex flex-wrap items-center gap-1">
                 <button
@@ -180,7 +180,7 @@ const Play = () => {
               </div>
             )}
             {game.id === "flashmath" ? (
-              <div className="grid grid-cols-[1.2fr_1fr] gap-3">
+              <div className="grid grid-cols-[1.2fr_1fr] gap-3 h-full">
                 <PracticeLog
                   game="flashmath"
                   refreshKey={refreshKey}
