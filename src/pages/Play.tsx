@@ -180,7 +180,7 @@ const Play = () => {
               </div>
             )}
             {game.id === "flashmath" ? (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-[1.2fr_1fr] gap-3">
                 <PracticeLog
                   game="flashmath"
                   refreshKey={refreshKey}
