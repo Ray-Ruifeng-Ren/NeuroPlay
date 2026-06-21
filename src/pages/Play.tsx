@@ -13,6 +13,7 @@ import { DEFAULT_GAUNTLET, encodeMode, type GauntletConfig } from "@/lib/gauntle
 import { ProLeaderboard } from "@/components/ProLeaderboard";
 import { AccountMenu } from "@/components/AccountMenu";
 import { PracticeLog } from "@/components/PracticeLog";
+import { MistakeBook } from "@/components/MistakeBook";
 import { PracticeStats } from "@/components/PracticeStats";
 import { cn } from "@/lib/utils";
 
