@@ -61,20 +61,12 @@ const Play = () => {
             className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> 广场
+            <span className="ml-1 text-muted-foreground/60">/</span>
+            <span className="ml-1 text-foreground">{game.name}</span>
           </button>
           <AccountMenu />
         </div>
       </header>
-
-      <section className="border-b border-border bg-card">
-        <div className="container py-2 md:py-3">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">{game.tagline}</div>
-          <div className="mt-0.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h1 className="font-display text-2xl leading-tight">{game.name}</h1>
-            <p className="max-w-prose text-xs text-muted-foreground">{game.description}</p>
-          </div>
-        </div>
-      </section>
 
       <main className="container py-2 md:py-3">
         {game.id === "flashmath" && (

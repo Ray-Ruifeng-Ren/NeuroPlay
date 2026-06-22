@@ -305,7 +305,7 @@ export function FlashMathGame({
 
   if (phase === "config") {
     return (
-      <div className="flex h-full flex-col justify-between gap-2">
+      <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
