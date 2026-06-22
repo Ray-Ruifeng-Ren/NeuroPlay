@@ -243,10 +243,12 @@ export function FlashMathGame({
     }
 
     const nextRound = session.round + 1;
+    const record: RoundRecord = { problem, answered: value, correct, score };
     const newSession = {
       round: nextRound,
       correct: session.correct + (correct ? 1 : 0),
       totalScore: session.totalScore + score,
+      history: [...session.history, record],
     };
     setSession(newSession);
     onFinished?.();
