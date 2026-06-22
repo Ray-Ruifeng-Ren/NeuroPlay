@@ -17,9 +17,10 @@ export interface FlashCfg {
   digits: number;
   speedMs: number;
   includeSub: boolean;
+  rounds: number;
 }
 
-const DEFAULT_CFG: FlashCfg = { count: 5, digits: 2, speedMs: 700, includeSub: false };
+const DEFAULT_CFG: FlashCfg = { count: 5, digits: 2, speedMs: 700, includeSub: false, rounds: 1 };
 const CFG_STORAGE_KEY = "flashmath:lastCfg";
 
 function loadStoredCfg(): FlashCfg {
@@ -33,6 +34,7 @@ function loadStoredCfg(): FlashCfg {
       digits: Math.min(7, Math.max(1, Number(p.digits) || DEFAULT_CFG.digits)),
       speedMs: Math.min(5000, Math.max(150, Number(p.speedMs) || DEFAULT_CFG.speedMs)),
       includeSub: !!p.includeSub,
+      rounds: Math.min(200, Math.max(1, Number(p.rounds) || DEFAULT_CFG.rounds)),
     };
   } catch {
     return DEFAULT_CFG;
@@ -183,6 +185,9 @@ export function FlashMathGame({
   const [input, setInput] = useState("");
   const [result, setResult] = useState<{ correct: boolean; score: number; answered: number } | null>(null);
   const [isReplay, setIsReplay] = useState(false);
+  const [session, setSession] = useState<{ round: number; correct: number; totalScore: number }>(
+    { round: 0, correct: 0, totalScore: 0 },
+  );
   const startTimeRef = useRef<number>(0);
   const timerRef = useRef<number | null>(null);
 
@@ -195,16 +200,23 @@ export function FlashMathGame({
     } catch {}
   }, [cfg]);
 
+  const loadProblem = async (): Promise<Problem | null> => {
+    if (mistakeMode) {
+      const wrong = await fetchWrongAttempts("flashmath", 50);
+      if (wrong.length === 0) return null;
+      const w = wrong[Math.floor(Math.random() * wrong.length)];
+      return { terms: w.terms, signs: w.signs as ("+" | "-")[], answer: w.answer };
+    }
+    return buildProblem(cfg.count, cfg.digits, cfg.includeSub);
+  };
+
   const submit = async (raw: string) => {
     const value = parseSpokenNumber(raw);
     if (value == null || !problem) return;
     const usedMs = Date.now() - startTimeRef.current;
     const correct = value === problem.answer;
     const score = computeScore(cfg, correct);
-    setResult({ correct, score, answered: value });
-    setPhase("result");
 
-    // Log every attempt (correct or wrong) for practice journal & mistake book.
     const mode = `${cfg.count}q-${cfg.digits}d${cfg.includeSub ? "-sub" : ""}`;
     logAttempt({
       game: "flashmath",
@@ -228,7 +240,29 @@ export function FlashMathGame({
         toast({ title: "登录后即可上榜", description: "本局成绩未保存到云端。" });
       }
     }
+
+    const nextRound = session.round + 1;
+    const newSession = {
+      round: nextRound,
+      correct: session.correct + (correct ? 1 : 0),
+      totalScore: session.totalScore + score,
+    };
+    setSession(newSession);
     onFinished?.();
+
+    if (nextRound < cfg.rounds) {
+      const next = await loadProblem();
+      if (next) {
+        setProblem(next);
+        setStepIdx(0);
+        setInput("");
+        setResult(null);
+        setPhase("playing");
+        return;
+      }
+    }
+    setResult({ correct, score, answered: value });
+    setPhase("result");
   };
 
   const speech = useSpeech((txt) => {
@@ -245,36 +279,24 @@ export function FlashMathGame({
     setResult(null);
     setStepIdx(0);
     setIsReplay(false);
+    setSession({ round: 0, correct: 0, totalScore: 0 });
   };
 
   const beginCountdown = async () => {
-    let problem: Problem | null = null;
-    let replay = false;
-
-    if (mistakeMode) {
-      const wrong = await fetchWrongAttempts("flashmath", 50);
-      if (wrong.length === 0) {
-        toast({ title: "没有错题可以练", description: "请关闭「只练错题」开关。" });
-        return;
-      }
-      const w = wrong[Math.floor(Math.random() * wrong.length)];
-      problem = {
-        terms: w.terms,
-        signs: w.signs as ("+" | "-")[],
-        answer: w.answer,
-      };
-      replay = true;
-    } else {
-      problem = buildProblem(cfg.count, cfg.digits, cfg.includeSub);
+    const p = await loadProblem();
+    if (!p) {
+      toast({ title: "没有错题可以练", description: "请关闭「只练错题」开关。" });
+      return;
     }
-
-    setProblem(problem);
-    setIsReplay(replay);
+    setProblem(p);
+    setIsReplay(mistakeMode);
     setStepIdx(0);
     setInput("");
     setResult(null);
+    setSession({ round: 0, correct: 0, totalScore: 0 });
     setPhase("ready");
   };
+
 
   // 3-2-1
   useEffect(() => {
@@ -331,7 +353,7 @@ export function FlashMathGame({
           </div>
         )}
 
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
           <ConfigItem label="笔数" hint="1 – 200">
             <div className="flex flex-wrap items-center gap-1">
               {[5, 10, 15, 20, 30].map((n) => (
@@ -404,7 +426,28 @@ export function FlashMathGame({
               <Pill active={cfg.includeSub} onClick={() => setCfg({ ...cfg, includeSub: true })}>有</Pill>
             </div>
           </ConfigItem>
+          <ConfigItem label="连续场数" hint="答完即下一场">
+            <div className="flex flex-wrap items-center gap-1">
+              {[1, 5, 10, 20, 50].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setCfg({ ...cfg, rounds: n })}
+                  className={cn(
+                    "inline-flex h-7 items-center justify-center rounded-md border px-2.5 text-[11px] font-medium transition-colors",
+                    cfg.rounds === n
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30",
+                  )}
+                >
+                  {n}场
+                </button>
+              ))}
+              <span className="text-[10px] text-muted-foreground">或</span>
+              <NumInput value={[1,5,10,20,50].includes(cfg.rounds) ? null : cfg.rounds} onChange={(n) => setCfg({ ...cfg, rounds: n })} min={1} max={200} suffix="场" />
+            </div>
+          </ConfigItem>
         </div>
+
 
         <Button onClick={beginCountdown}>
           <Play className="mr-1.5 h-4 w-4" /> 开始挑战
@@ -440,7 +483,10 @@ export function FlashMathGame({
       <div className="flex flex-col items-center gap-3">
         <div className="flex w-full items-center justify-between text-[11px] text-muted-foreground">
           <span className="font-mono-tabular">{stepIdx + 1} / {problem.terms.length}</span>
-          <span className="font-mono-tabular">{cfg.speedMs}ms</span>
+          <span className="font-mono-tabular">
+            {cfg.rounds > 1 && <span className="mr-2 text-primary">第 {session.round + 1} / {cfg.rounds} 场</span>}
+            {cfg.speedMs}ms
+          </span>
           <button onClick={reset} className="hover:text-destructive">放弃</button>
         </div>
         <div className="h-px w-full bg-border">
@@ -467,7 +513,12 @@ export function FlashMathGame({
     return (
       <div className="flex flex-col items-center gap-4">
         <div className="text-center">
-          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">输入答案</div>
+          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            输入答案
+            {cfg.rounds > 1 && (
+              <span className="ml-2 text-primary">第 {session.round + 1} / {cfg.rounds} 场</span>
+            )}
+          </div>
         </div>
         <div className="w-full max-w-sm">
           <Input
@@ -535,6 +586,22 @@ export function FlashMathGame({
           </div>
           <div className="text-[11px] text-muted-foreground">分</div>
         </div>
+        {cfg.rounds > 1 && (
+          <div className="w-full rounded-md border border-primary/30 bg-primary/5 p-3 text-center">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">本轮 {cfg.rounds} 场总计</div>
+            <div className="mt-1 flex items-center justify-center gap-4 font-mono-tabular">
+              <div>
+                <div className="text-xl font-semibold text-foreground">{session.correct} / {cfg.rounds}</div>
+                <div className="text-[10px] text-muted-foreground">正确</div>
+              </div>
+              <div className="h-8 w-px bg-border" />
+              <div>
+                <div className="text-xl font-semibold text-primary">{session.totalScore}</div>
+                <div className="text-[10px] text-muted-foreground">总分</div>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="w-full rounded-md border border-border p-3 text-center">
           <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">正确答案</div>
           <div className="my-0.5 font-mono-tabular text-2xl font-semibold">{problem.answer}</div>
