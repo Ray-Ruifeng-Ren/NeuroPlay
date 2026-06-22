@@ -185,6 +185,9 @@ export function FlashMathGame({
   const [input, setInput] = useState("");
   const [result, setResult] = useState<{ correct: boolean; score: number; answered: number } | null>(null);
   const [isReplay, setIsReplay] = useState(false);
+  const [session, setSession] = useState<{ round: number; correct: number; totalScore: number }>(
+    { round: 0, correct: 0, totalScore: 0 },
+  );
   const startTimeRef = useRef<number>(0);
   const timerRef = useRef<number | null>(null);
 
@@ -197,16 +200,23 @@ export function FlashMathGame({
     } catch {}
   }, [cfg]);
 
+  const loadProblem = async (): Promise<Problem | null> => {
+    if (mistakeMode) {
+      const wrong = await fetchWrongAttempts("flashmath", 50);
+      if (wrong.length === 0) return null;
+      const w = wrong[Math.floor(Math.random() * wrong.length)];
+      return { terms: w.terms, signs: w.signs as ("+" | "-")[], answer: w.answer };
+    }
+    return buildProblem(cfg.count, cfg.digits, cfg.includeSub);
+  };
+
   const submit = async (raw: string) => {
     const value = parseSpokenNumber(raw);
     if (value == null || !problem) return;
     const usedMs = Date.now() - startTimeRef.current;
     const correct = value === problem.answer;
     const score = computeScore(cfg, correct);
-    setResult({ correct, score, answered: value });
-    setPhase("result");
 
-    // Log every attempt (correct or wrong) for practice journal & mistake book.
     const mode = `${cfg.count}q-${cfg.digits}d${cfg.includeSub ? "-sub" : ""}`;
     logAttempt({
       game: "flashmath",
@@ -230,7 +240,29 @@ export function FlashMathGame({
         toast({ title: "登录后即可上榜", description: "本局成绩未保存到云端。" });
       }
     }
+
+    const nextRound = session.round + 1;
+    const newSession = {
+      round: nextRound,
+      correct: session.correct + (correct ? 1 : 0),
+      totalScore: session.totalScore + score,
+    };
+    setSession(newSession);
     onFinished?.();
+
+    if (nextRound < cfg.rounds) {
+      const next = await loadProblem();
+      if (next) {
+        setProblem(next);
+        setStepIdx(0);
+        setInput("");
+        setResult(null);
+        setPhase("playing");
+        return;
+      }
+    }
+    setResult({ correct, score, answered: value });
+    setPhase("result");
   };
 
   const speech = useSpeech((txt) => {
@@ -247,36 +279,24 @@ export function FlashMathGame({
     setResult(null);
     setStepIdx(0);
     setIsReplay(false);
+    setSession({ round: 0, correct: 0, totalScore: 0 });
   };
 
   const beginCountdown = async () => {
-    let problem: Problem | null = null;
-    let replay = false;
-
-    if (mistakeMode) {
-      const wrong = await fetchWrongAttempts("flashmath", 50);
-      if (wrong.length === 0) {
-        toast({ title: "没有错题可以练", description: "请关闭「只练错题」开关。" });
-        return;
-      }
-      const w = wrong[Math.floor(Math.random() * wrong.length)];
-      problem = {
-        terms: w.terms,
-        signs: w.signs as ("+" | "-")[],
-        answer: w.answer,
-      };
-      replay = true;
-    } else {
-      problem = buildProblem(cfg.count, cfg.digits, cfg.includeSub);
+    const p = await loadProblem();
+    if (!p) {
+      toast({ title: "没有错题可以练", description: "请关闭「只练错题」开关。" });
+      return;
     }
-
-    setProblem(problem);
-    setIsReplay(replay);
+    setProblem(p);
+    setIsReplay(mistakeMode);
     setStepIdx(0);
     setInput("");
     setResult(null);
+    setSession({ round: 0, correct: 0, totalScore: 0 });
     setPhase("ready");
   };
+
 
   // 3-2-1
   useEffect(() => {
