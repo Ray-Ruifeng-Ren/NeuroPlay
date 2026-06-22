@@ -420,32 +420,36 @@ export function FlashMathGame({
               <SecInput value={[100,300,500,1000,1500].includes(cfg.speedMs) ? null : cfg.speedMs} onChange={(n) => setCfg({ ...cfg, speedMs: n })} min={150} max={5000} />
             </div>
           </ConfigItem>
-          <ConfigItem label="减法" hint="至多一个减号">
-            <div className="flex gap-1.5">
-              <Pill active={!cfg.includeSub} onClick={() => setCfg({ ...cfg, includeSub: false })}>无</Pill>
-              <Pill active={cfg.includeSub} onClick={() => setCfg({ ...cfg, includeSub: true })}>有</Pill>
+          <ConfigItem label="减法 / 场数" hint="减号 + 连续场数">
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5">
+                <span className="w-10 shrink-0 text-[10px] text-muted-foreground">减法</span>
+                <Pill active={!cfg.includeSub} onClick={() => setCfg({ ...cfg, includeSub: false })}>无</Pill>
+                <Pill active={cfg.includeSub} onClick={() => setCfg({ ...cfg, includeSub: true })}>有</Pill>
+              </div>
+              <div className="flex items-start gap-1.5">
+                <span className="mt-1.5 w-10 shrink-0 text-[10px] text-muted-foreground">场数</span>
+                <div className="flex flex-wrap items-center gap-1">
+                  {[1, 5, 10, 20, 50].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => setCfg({ ...cfg, rounds: n })}
+                      className={cn(
+                        "inline-flex h-7 items-center justify-center rounded-md border px-2 text-[11px] font-medium transition-colors",
+                        cfg.rounds === n
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30",
+                      )}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                  <NumInput value={[1,5,10,20,50].includes(cfg.rounds) ? null : cfg.rounds} onChange={(n) => setCfg({ ...cfg, rounds: n })} min={1} max={200} suffix="场" />
+                </div>
+              </div>
             </div>
           </ConfigItem>
-          <ConfigItem label="连续场数" hint="答完即下一场">
-            <div className="flex flex-wrap items-center gap-1">
-              {[1, 5, 10, 20, 50].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setCfg({ ...cfg, rounds: n })}
-                  className={cn(
-                    "inline-flex h-7 items-center justify-center rounded-md border px-2.5 text-[11px] font-medium transition-colors",
-                    cfg.rounds === n
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30",
-                  )}
-                >
-                  {n}场
-                </button>
-              ))}
-              <span className="text-[10px] text-muted-foreground">或</span>
-              <NumInput value={[1,5,10,20,50].includes(cfg.rounds) ? null : cfg.rounds} onChange={(n) => setCfg({ ...cfg, rounds: n })} min={1} max={200} suffix="场" />
-            </div>
-          </ConfigItem>
+
         </div>
 
 
