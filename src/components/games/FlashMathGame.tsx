@@ -483,7 +483,10 @@ export function FlashMathGame({
       <div className="flex flex-col items-center gap-3">
         <div className="flex w-full items-center justify-between text-[11px] text-muted-foreground">
           <span className="font-mono-tabular">{stepIdx + 1} / {problem.terms.length}</span>
-          <span className="font-mono-tabular">{cfg.speedMs}ms</span>
+          <span className="font-mono-tabular">
+            {cfg.rounds > 1 && <span className="mr-2 text-primary">第 {session.round + 1} / {cfg.rounds} 场</span>}
+            {cfg.speedMs}ms
+          </span>
           <button onClick={reset} className="hover:text-destructive">放弃</button>
         </div>
         <div className="h-px w-full bg-border">
