@@ -55,7 +55,7 @@ export function PracticeStats({ game, refreshKey }: Props) {
   }, [rows]);
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
       <Metric
         icon={<Flame className="h-3.5 w-3.5" />}
         label="连续天数"
@@ -80,6 +80,13 @@ export function PracticeStats({ game, refreshKey }: Props) {
         label="正确率"
         value={loading || total === 0 ? "—" : String(accuracy)}
         suffix="%"
+      />
+      <Metric
+        icon={<CalendarDays className="h-3.5 w-3.5" />}
+        label="今日练题数"
+        value={loading ? "—" : String(todayCount)}
+        suffix="题"
+        accent={todayCount > 0}
       />
     </div>
   );
