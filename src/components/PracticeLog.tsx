@@ -66,12 +66,21 @@ export function PracticeLog({ game, refreshKey, extraTab, mistakeTab }: Props) {
             <TabsTrigger value="log" className="text-[11px]">
               <CalendarDays className="mr-1 h-3 w-3" /> 记录
             </TabsTrigger>
+            {mistakeTab && (
+              <TabsTrigger value="mistakes" className="text-[11px]">错题本</TabsTrigger>
+            )}
           </TabsList>
         </div>
 
         {extraTab && (
           <TabsContent value="board" className="m-0 flex-1 overflow-auto p-0">
             {extraTab}
+          </TabsContent>
+        )}
+
+        {mistakeTab && (
+          <TabsContent value="mistakes" className="m-0 flex-1 overflow-hidden p-0">
+            {mistakeTab}
           </TabsContent>
         )}
 
