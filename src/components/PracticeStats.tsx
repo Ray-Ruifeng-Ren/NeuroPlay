@@ -22,9 +22,9 @@ export function PracticeStats({ game, refreshKey }: Props) {
     return () => { live = false; };
   }, [game, refreshKey]);
 
-  const { streak, total, accuracy, distinctDays } = useMemo(() => {
+  const { streak, total, accuracy, distinctDays, todayCount } = useMemo(() => {
     if (rows.length === 0)
-      return { streak: 0, total: 0, accuracy: 0, distinctDays: 0 };
+      return { streak: 0, total: 0, accuracy: 0, distinctDays: 0, todayCount: 0 };
     const byDay = groupByDay(rows);
     let total = 0, correct = 0;
     for (const r of rows) {
@@ -32,6 +32,12 @@ export function PracticeStats({ game, refreshKey }: Props) {
       if (r.correct) correct += 1;
     }
     const distinctDays = byDay.size;
+
+    // today count
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    const todayCount = byDay.get(todayKey)?.total ?? 0;
 
     // streak: consecutive days ending today (or yesterday if today empty)
     const has = (d: Date) => {
@@ -51,11 +57,12 @@ export function PracticeStats({ game, refreshKey }: Props) {
       total,
       accuracy: Math.round((correct / total) * 100),
       distinctDays,
+      todayCount,
     };
   }, [rows]);
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
       <Metric
         icon={<Flame className="h-3.5 w-3.5" />}
         label="连续天数"
@@ -80,6 +87,13 @@ export function PracticeStats({ game, refreshKey }: Props) {
         label="正确率"
         value={loading || total === 0 ? "—" : String(accuracy)}
         suffix="%"
+      />
+      <Metric
+        icon={<CalendarDays className="h-3.5 w-3.5" />}
+        label="今日练题数"
+        value={loading ? "—" : String(todayCount)}
+        suffix="题"
+        accent={todayCount > 0}
       />
     </div>
   );
