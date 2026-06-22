@@ -104,6 +104,7 @@ const Play = () => {
                 onFinished={handleFinished}
                 onCfgChange={setFlashCfg}
                 mistakeMode={flashMistakeMode}
+                onMistakeModeChange={setFlashMistakeMode}
               />
             )}
             {game.id === "nback" && <NBackGame onFinished={handleFinished} onCfgChange={setNbackCfg} />}
