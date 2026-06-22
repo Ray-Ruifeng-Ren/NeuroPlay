@@ -167,10 +167,12 @@ export function FlashMathGame({
   onFinished,
   onCfgChange,
   mistakeMode = false,
+  onMistakeModeChange,
 }: {
   onFinished?: () => void;
   onCfgChange?: (cfg: FlashCfg) => void;
   mistakeMode?: boolean;
+  onMistakeModeChange?: (v: boolean) => void;
 }) {
   const [cfg, setCfg] = useState<FlashCfg>(() => loadStoredCfg());
   const [phase, setPhase] = useState<Phase>("config");
