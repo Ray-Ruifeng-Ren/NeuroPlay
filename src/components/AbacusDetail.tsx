@@ -124,6 +124,21 @@ export function AbacusDetail({ attempts, index, onIndexChange, onClose }: Props)
     }
   };
 
+  useEffect(() => {
+    if (!attempt) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        goNext();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        goPrev();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
   return (
     <Dialog open={!!attempt} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
