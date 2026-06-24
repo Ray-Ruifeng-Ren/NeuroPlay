@@ -6,7 +6,9 @@ import { cn } from "@/lib/utils";
 import type { AttemptRow } from "@/lib/practiceLog";
 
 interface Props {
-  attempt: AttemptRow | null;
+  attempts: AttemptRow[];
+  index: number | null;
+  onIndexChange: (i: number | null) => void;
   onClose: () => void;
 }
 
