@@ -6,6 +6,7 @@ import {
   formatExpr,
   type AttemptRow,
 } from "@/lib/practiceLog";
+import { AbacusDetail } from "./AbacusDetail";
 
 interface Props {
   game: string;
@@ -17,6 +18,7 @@ interface Props {
 export function MistakeBook({ game, refreshKey, mistakeMode, onMistakeModeChange }: Props) {
   const [wrong, setWrong] = useState<AttemptRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<AttemptRow | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -61,28 +63,34 @@ export function MistakeBook({ game, refreshKey, mistakeMode, onMistakeModeChange
         ) : (
           <ul className="flex-1 space-y-1 overflow-y-auto pr-1">
             {wrong.map((w) => (
-              <li
-                key={w.id}
-                className="flex items-center justify-between rounded-md border border-border bg-background px-2 py-1"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-mono-tabular text-[11px]">
-                    {formatExpr(w.terms, w.signs)} = {w.answer}
+              <li key={w.id}>
+                <button
+                  type="button"
+                  onClick={() => setSelected(w)}
+                  className="flex w-full items-center justify-between rounded-md border border-border bg-background px-2 py-1 text-left transition-colors hover:border-primary/40 hover:bg-muted/40"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-mono-tabular text-[11px]">
+                      {formatExpr(w.terms, w.signs)} = {w.answer}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      你答{" "}
+                      <span className="font-mono-tabular text-destructive">
+                        {w.user_answer ?? "超时"}
+                      </span>
+                      <span className="mx-1.5">·</span>
+                      {timeAgo(w.created_at)}
+                      <span className="mx-1.5">·</span>
+                      <span className="text-primary">查看算珠 →</span>
+                    </div>
                   </div>
-                  <div className="text-[10px] text-muted-foreground">
-                    你答{" "}
-                    <span className="font-mono-tabular text-destructive">
-                      {w.user_answer ?? "超时"}
-                    </span>
-                    <span className="mx-1.5">·</span>
-                    {timeAgo(w.created_at)}
-                  </div>
-                </div>
+                </button>
               </li>
             ))}
           </ul>
         )}
       </div>
+      <AbacusDetail attempt={selected} onClose={() => setSelected(null)} />
     </div>
   );
 }
