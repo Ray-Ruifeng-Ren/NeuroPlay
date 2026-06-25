@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Switch } from "@/components/ui/switch";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   fetchWrongAttempts,
   formatExpr,
@@ -15,15 +15,18 @@ interface Props {
   onMistakeModeChange: (v: boolean) => void;
 }
 
+const PAGE_SIZE = 15;
+
 export function MistakeBook({ game, refreshKey, mistakeMode, onMistakeModeChange }: Props) {
   const [wrong, setWrong] = useState<AttemptRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
     let live = true;
     setLoading(true);
-    fetchWrongAttempts(game, 50).then((w) => {
+    fetchWrongAttempts(game, 1000).then((w) => {
       if (!live) return;
       setWrong(w);
       setLoading(false);
@@ -32,6 +35,15 @@ export function MistakeBook({ game, refreshKey, mistakeMode, onMistakeModeChange
       live = false;
     };
   }, [game, refreshKey]);
+
+  const totalPages = Math.max(1, Math.ceil(wrong.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageStart = safePage * PAGE_SIZE;
+  const pageItems = useMemo(
+    () => wrong.slice(pageStart, pageStart + PAGE_SIZE),
+    [wrong, pageStart],
+  );
+
 
   return (
     <div className="flex h-full flex-col">
