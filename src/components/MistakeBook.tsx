@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Switch } from "@/components/ui/switch";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   fetchWrongAttempts,
   formatExpr,
@@ -15,15 +15,18 @@ interface Props {
   onMistakeModeChange: (v: boolean) => void;
 }
 
+const PAGE_SIZE = 15;
+
 export function MistakeBook({ game, refreshKey, mistakeMode, onMistakeModeChange }: Props) {
   const [wrong, setWrong] = useState<AttemptRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
     let live = true;
     setLoading(true);
-    fetchWrongAttempts(game, 50).then((w) => {
+    fetchWrongAttempts(game, 1000).then((w) => {
       if (!live) return;
       setWrong(w);
       setLoading(false);
@@ -32,6 +35,15 @@ export function MistakeBook({ game, refreshKey, mistakeMode, onMistakeModeChange
       live = false;
     };
   }, [game, refreshKey]);
+
+  const totalPages = Math.max(1, Math.ceil(wrong.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageStart = safePage * PAGE_SIZE;
+  const pageItems = useMemo(
+    () => wrong.slice(pageStart, pageStart + PAGE_SIZE),
+    [wrong, pageStart],
+  );
+
 
   return (
     <div className="flex h-full flex-col">
@@ -61,36 +73,64 @@ export function MistakeBook({ game, refreshKey, mistakeMode, onMistakeModeChange
             还没有错题，继续保持 👍
           </div>
         ) : (
-          <ul className="flex-1 space-y-1 overflow-y-auto pr-1">
-            {wrong.map((w, idx) => (
-              <li key={w.id}>
+          <>
+            <ul className="flex-1 space-y-1 overflow-y-auto pr-1">
+              {pageItems.map((w, i) => {
+                const idx = pageStart + i;
+                return (
+                  <li key={w.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedIdx(idx)}
+                      className="flex w-full items-center gap-2 rounded-md border border-border bg-background px-2 py-1 text-left transition-colors hover:border-primary/40 hover:bg-muted/40"
+                    >
+                      <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono-tabular text-[10px] text-muted-foreground">
+                        #{idx + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-mono-tabular text-[11px]">
+                          {formatExpr(w.terms, w.signs)} = {w.answer}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">
+                          你答{" "}
+                          <span className="font-mono-tabular text-destructive">
+                            {w.user_answer ?? "超时"}
+                          </span>
+                          <span className="mx-1.5">·</span>
+                          {timeAgo(w.created_at)}
+                          <span className="mx-1.5">·</span>
+                          <span className="text-primary">查看算珠 →</span>
+                        </div>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            {totalPages > 1 && (
+              <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2">
                 <button
                   type="button"
-                  onClick={() => setSelectedIdx(idx)}
-                  className="flex w-full items-center gap-2 rounded-md border border-border bg-background px-2 py-1 text-left transition-colors hover:border-primary/40 hover:bg-muted/40"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={safePage === 0}
+                  className="flex items-center gap-0.5 rounded px-1.5 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted disabled:opacity-30"
                 >
-                  <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono-tabular text-[10px] text-muted-foreground">
-                    #{idx + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-mono-tabular text-[11px]">
-                      {formatExpr(w.terms, w.signs)} = {w.answer}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground">
-                      你答{" "}
-                      <span className="font-mono-tabular text-destructive">
-                        {w.user_answer ?? "超时"}
-                      </span>
-                      <span className="mx-1.5">·</span>
-                      {timeAgo(w.created_at)}
-                      <span className="mx-1.5">·</span>
-                      <span className="text-primary">查看算珠 →</span>
-                    </div>
-                  </div>
+                  <ChevronLeft className="h-3 w-3" /> 上一页
                 </button>
-              </li>
-            ))}
-          </ul>
+                <span className="font-mono-tabular text-[10px] text-muted-foreground">
+                  {safePage + 1} / {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={safePage >= totalPages - 1}
+                  className="flex items-center gap-0.5 rounded px-1.5 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted disabled:opacity-30"
+                >
+                  下一页 <ChevronRight className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
       <AbacusDetail
