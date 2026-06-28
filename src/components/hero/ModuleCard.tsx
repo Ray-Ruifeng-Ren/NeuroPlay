@@ -84,43 +84,123 @@ export function ModuleCard({
           transition: "transform 420ms cubic-bezier(.2,.7,.2,1), box-shadow 300ms",
         }}
       >
-        {/* aged parchment grain */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.18] mix-blend-overlay"
-          style={{
-            backgroundImage:
-              "radial-gradient(rgba(255,240,200,0.7) 1px, transparent 1px), radial-gradient(rgba(0,0,0,0.4) 1px, transparent 1px)",
-            backgroundSize: "3px 3px, 5px 5px",
-            backgroundPosition: "0 0, 1px 2px",
-          }}
-        />
-
-        {/* vignette */}
+        {/* Layer 1: SVG fractal noise — real fiber grain */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
           style={{
-            background: `radial-gradient(120% 80% at 50% 110%, transparent 40%, ${p.bot} 95%)`,
+            backgroundImage:
+              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.92  0 0 0 0 0.78  0 0 0 0 0.52  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")",
+            backgroundSize: "240px 240px",
+            opacity: 0.35,
+            mixBlendMode: "screen",
           }}
         />
 
-        {/* ornate triple frame */}
+        {/* Layer 2: coarse paper fibre — large soft turbulence */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='3' seed='3'/><feColorMatrix values='0 0 0 0 0.05  0 0 0 0 0.03  0 0 0 0 0.01  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")",
+            backgroundSize: "100% 100%",
+            opacity: 0.55,
+            mixBlendMode: "multiply",
+          }}
+        />
+
+        {/* Layer 3: foxing — scattered amber age spots */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage: `
+              radial-gradient(circle at 18% 22%, rgba(120,70,20,0.55) 0%, transparent 4%),
+              radial-gradient(circle at 78% 14%, rgba(90,50,15,0.5) 0%, transparent 3%),
+              radial-gradient(circle at 64% 58%, rgba(110,65,20,0.45) 0%, transparent 5%),
+              radial-gradient(circle at 12% 78%, rgba(80,45,12,0.5) 0%, transparent 4%),
+              radial-gradient(circle at 88% 86%, rgba(120,70,25,0.4) 0%, transparent 5%),
+              radial-gradient(circle at 42% 38%, rgba(95,55,18,0.35) 0%, transparent 6%)
+            `,
+            mixBlendMode: "multiply",
+          }}
+        />
+
+        {/* Layer 4: vignette — burnt edges */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `radial-gradient(130% 90% at 50% 50%, transparent 35%, ${p.bot} 100%)`,
+            opacity: 0.85,
+          }}
+        />
+
+        {/* Layer 5: water-stain wash — top-left */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(60% 40% at 22% 18%, rgba(60,30,8,0.3) 0%, transparent 70%)",
+            mixBlendMode: "multiply",
+          }}
+        />
+
+
+        {/* ornate triple frame — gilded with wear */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-[5px] rounded-[10px]"
-          style={{ border: `1px solid ${p.gild}99` }}
+          style={{
+            border: `1.2px solid ${p.gild}`,
+            boxShadow: `inset 0 0 0 0.5px ${p.accent}66, 0 0 0 0.5px rgba(0,0,0,0.4)`,
+          }}
+        />
+        {/* gilt specular highlight — diagonal gleam on frame */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-[5px] rounded-[10px]"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(255,230,160,0.55) 0%, transparent 18%, transparent 60%, rgba(255,220,150,0.35) 78%, transparent 95%)",
+            mixBlendMode: "screen",
+            padding: "1.2px",
+            WebkitMask:
+              "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+            WebkitMaskComposite: "xor",
+            maskComposite: "exclude",
+          }}
+        />
+        {/* gilt wear — dark chips eaten out of the frame */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-[5px] rounded-[10px]"
+          style={{
+            background:
+              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2' seed='5'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1.4 -0.4'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")",
+            backgroundSize: "100% 100%",
+            opacity: 0.5,
+            mixBlendMode: "multiply",
+            padding: "1.2px",
+            WebkitMask:
+              "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+            WebkitMaskComposite: "xor",
+            maskComposite: "exclude",
+          }}
         />
         <div
           aria-hidden
           className="pointer-events-none absolute inset-[9px] rounded-[8px]"
-          style={{ border: `0.5px solid ${p.gild}55` }}
+          style={{ border: `0.5px solid ${p.gild}66` }}
         />
         <div
           aria-hidden
           className="pointer-events-none absolute inset-[13px] rounded-[6px]"
           style={{ border: `0.5px dashed ${p.gild}44` }}
         />
+
 
         {/* corner flourishes — more elaborate */}
         {[
