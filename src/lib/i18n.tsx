@@ -54,6 +54,8 @@ const DICT = {
     sci: "Scientific Problems",
     sci_d: "Uniform 0–9 per digit, no repeats per stroke — professional abacus standard.",
     footer: "© NeuroPlay · Scores auto-sync to cloud after login",
+    coauthor: "Co-developed by a World Mental-Calc Champion × MIT",
+    coauthor_sub: "Cognitive Performance Lab · Backed by competition data",
     tag_voice: "Voice answer",
     tag_digits: "1–7 digits",
     tag_speed: "200ms speed",
