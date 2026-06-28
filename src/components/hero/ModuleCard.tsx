@@ -15,16 +15,17 @@ type Props = {
   shift: number;
 };
 
-// Per-module jewel palette — vintage botanical / arcana feel.
-// top/bot = card field gradient stops; ink = primary readable color; gild = gold edge tone.
-const PALETTE: Record<string, { top: string; bot: string; ink: string; gild: string; accent: string }> = {
-  flashmath: { top: "#1f3a2e", bot: "#0f1f18", ink: "#f3e7c8", gild: "#caa75a", accent: "#e7b864" },
-  gauntlet:  { top: "#3a1a1a", bot: "#1c0c0c", ink: "#f3dcc8", gild: "#c98a4b", accent: "#e07a4b" },
-  schulte:   { top: "#1a2a3a", bot: "#0c1620", ink: "#dde6f2", gild: "#9bb7c9", accent: "#6da3c4" },
-  nback:     { top: "#2e1a3a", bot: "#160a22", ink: "#ecd8f2", gild: "#a98ac0", accent: "#b07ed1" },
-  reaction:  { top: "#3a2a10", bot: "#1f1608", ink: "#f6e6c2", gild: "#d8a64a", accent: "#f0b250" },
-  cards:     { top: "#10302e", bot: "#07191a", ink: "#d8efe6", gild: "#7fb8a4", accent: "#56a892" },
-  orbit:     { top: "#142244", bot: "#080f24", ink: "#dce4ff", gild: "#9aa6d6", accent: "#7a8cd4" },
+// Unified vintage deep-gold palette across every card.
+const GOLD = {
+  top: "#3a2a10",     // burnt amber top
+  bot: "#1c1306",     // deep walnut bottom
+  ink: "#f3e1b4",     // aged ivory text
+  gild: "#caa258",    // gilded edge
+  accent: "#e8b85a",  // bright gold highlight
+};
+const PALETTE: Record<string, typeof GOLD> = {
+  flashmath: GOLD, gauntlet: GOLD, schulte: GOLD, nback: GOLD,
+  reaction: GOLD, cards: GOLD, orbit: GOLD,
 };
 
 export function ModuleCard({
