@@ -1,91 +1,88 @@
+## 目标
+把首页 Hero 升级成"局部电影感 + WebGL 神经粒子背景 + 滚动驱动微交互"的高级开场，其他区域保持现有亮色 Anodized Clarity 风格不变。
 
-# 闪电心算 · 练习记录 & 错题本
+## 范围
+仅改动：
+- `src/pages/Index.tsx` 顶部公告条 + Hero（首屏 100vh）
+- 新增 `src/components/hero/NeuralCanvas.tsx`（WebGL 粒子）
+- 新增 `src/components/hero/ScrambleText.tsx`、`ScrambleIn.tsx`（轻量，无新增字体依赖）
+- 新增 `src/lib/useLenis.ts`（仅 Hero 区域生效，移动端禁用）
+- `src/index.css` 增加少量动画 keyframes 与 .hero-dark 局部作用域
 
-先在「闪电心算」落地，跑通后再推广到其他项目（障碍闪电心算等结构相似的游戏可复用同一套表）。
+不动：Logo、AccountMenu、Languages、Modules 网格、Values、Footer、全站配色、字体（继续 Playfair + Inter）。
 
----
+## 交互设计
 
-## 一、数据层（Lovable Cloud）
+### 1. 顶部公告条（保留 + 加戏）
+- 文案不变（速算冠军 × MIT）。
+- 左侧脉冲点改为"双层呼吸光晕"（外圈 4s 缓慢、内圈 1.6s）。
+- 文案使用 **ScrambleText hover**：鼠标移入时整行从左到右字符解码一次（25ms/帧，仅一次，不打扰阅读）。
+- 整条加一条 1px 顶部渐变描边（hsl(primary) 透明渐变），强化"产品线"质感。
 
-新增一张表 `practice_attempts`，记录每一次单题作答：
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| id | uuid PK | |
-| user_id | uuid | 当前登录用户 |
-| game | text | 如 `flashmath` / `gauntlet` |
-| mode | text | 题目配置串（笔数x位数-速度+减号），便于复练相同档位 |
-| terms | int[] | 题面数字 |
-| signs | text[] | `+` / `-` |
-| answer | int | 正确答案 |
-| user_answer | int \| null | 用户填的答案（超时为 null） |
-| correct | bool | |
-| used_ms | int | 答题用时 |
-| created_at | timestamptz default now() | |
-
-RLS：用户只能 select/insert 自己的行；service_role 全权。配套 GRANT。
-
-> 不动 `scores` 表，原有排行榜逻辑保持不变。
-
----
-
-## 二、写入时机
-
-在 `FlashMathGame.tsx` 提交答案的位置追加一次 `insert`（与现在写 `scores` 的位置并列）。失败静默（不阻塞游戏）。
-
----
-
-## 三、UI（在 /play/flashmath 页面底部新增一块「训练日志」区域）
-
-为了"简洁"，把两个板块合到一个卡片里，用 Tabs 切换：
-
-```text
-┌─ 训练日志 ──────────────────────────┐
-│ [ 练习记录 ] [ 错题本 ]             │
-│─────────────────────────────────────│
-│ Tab 1: 练习记录                     │
-│   ┌───────────┐  今日 18 题         │
-│   │  日历     │  ✓ 14   ✗ 4        │
-│   │ (有点的日 │  正确率 78%         │
-│   │  期高亮)  │  本周 92 题         │
-│   └───────────┘  累计 514 题        │
-│                                     │
-│ Tab 2: 错题本                       │
-│   [ 只练错题 ] 开关 → 启用后开始游戏 │
-│   会从错题池抽题                    │
-│   ─────                             │
-│   错题列表（最近 50 条，可翻页）：   │
-│   • 3+7-2 = 8   你答: 9   2小时前   │
-│   • 25+18 = 43  超时              │
-│   ...                               │
-└─────────────────────────────────────┘
+### 2. Hero 首屏（h-screen，局部深色电影感）
+布局结构（从底到顶 z-index）：
+```
+z-0  bg-foreground (深墨)         ← 局部深色，仅 Hero 容器内
+z-1  <NeuralCanvas/>              ← WebGL 神经粒子
+z-5  径向 vignette + 极淡网格       ← 现有装饰升级
+z-10 文案内容（标题/描述/CTA）
+z-20 底部 progressive blur 渐隐    ← 与下方亮色区无缝衔接
 ```
 
-技术点：
-- 日历用现有 shadcn `Calendar`，通过 `modifiers` 给"有练习的日子"加圆点 marker
-- 统计用一次 `select created_at, correct` 然后前端 groupBy 日期（数据量不大）
-- 错题列表：`select * where correct = false order by created_at desc limit 50`
-- "只练错题"用 localStorage 标记 `flashmath:practice-mistakes-only=true`；游戏开始时若开启，则用错题池里的 `terms/signs` 直接喂给 `Stage`，跳过随机生成
+**WebGL NeuralCanvas（核心）**
+- 技术：原生 WebGL2（不引入 three.js，包体 < 4KB）。失败回退到 CSS 粒子动画。
+- 视觉：~120 个发光节点 + 邻近连线（距离 < 阈值才连），形成"神经突触网络"。节点缓慢漂移（柏林噪声驱动）。
+- 颜色：节点 hsl(primary/glow) 微调，背景透明，与深色 bg 叠加。
+- 交互：
+  - 鼠标移动产生"引力场"，半径内节点向光标靠拢 + 连线变亮。
+  - 鼠标移开 1.5s 后回归自由漂移。
+  - 移动端：自动降级到 60 节点 + 关闭引力，纯漂移。
+- 性能：requestAnimationFrame，document.hidden 时暂停；DPR 上限 1.5；FPS < 40 自动减半节点。
 
----
+**标题文字（ScrambleIn）**
+- "Quantify Your" / "Cognitive Edge"（英文）或现有 i18n 中文标题。
+- 进入时：每个词字符从随机字符 → 真实字符（900ms，左到右），节奏感来自 Playfair 大字号。
+- 副标题：y:20→0 + opacity 渐入，delay 0.4s。
 
-## 四、文件改动
+**CTA 按钮**
+- "开始挑战 闪电心算" 保留现有，加 hover：
+  - 背景出现一束"扫光"（::after 渐变从左滑到右，800ms）
+  - 文字 ScrambleText 解码一次
+- "浏览全部" hover 下划线从中心展开（story-link 风格）
 
-- 新建 migration：建表 + GRANT + RLS
-- 新建 `src/lib/practiceLog.ts`：封装写入、读取、按日聚合、错题查询
-- 新建 `src/components/PracticeLog.tsx`：上述 Tabs 卡片（日历 + 错题本）
-- 改 `src/components/games/FlashMathGame.tsx`：
-  - 答题处写入 `practice_attempts`
-  - 支持 `mistakePool` props，从错题复练
-- 改 `src/pages/Play.tsx`：在 flashmath 路由下渲染 `<PracticeLog game="flashmath" />`
+### 3. 滚动驱动（Lenis 仅在桌面 Hero 范围）
+- 引入 `lenis` ^1.3.x（轻量 ~8KB），duration 1.2，指数缓动。
+- 移动端 / prefers-reduced-motion：完全禁用，使用原生滚动。
+- Hero 离场动画（scrollYProgress 0 → 0.3）：
+  - 标题 y: 0 → -40，opacity 1 → 0
+  - 粒子画布 scale 1 → 1.06，opacity 1 → 0.3
+  - 底部 blur 从 0 → 20px（progressive backdrop-filter）
+- 用 ref 直接改 transform/style，不走 React state，避免重渲染。
 
----
+### 4. 暗→亮过渡
+- Hero 底部 80px 高度：从 transparent → bg-background 的垂直渐变 + backdrop-blur(8px)，让深色 Hero "溶解"进下方亮色区，不出现硬切。
+- Modules 网格与下方完全不变。
 
-## 五、范围说明
+## 自我批判（已迭代）
+1. **会不会太重？** → 不用 three.js、不加视频、不加新字体；新增 JS < 15KB（lenis 8KB + 自写 WebGL ~3KB + scramble ~2KB）。
+2. **WebGL 在低端机/无 GPU 怎么办？** → 检测 `gl = canvas.getContext('webgl2')`，失败回退到 CSS 关键帧粒子（10 个发光圆点漂浮）。
+3. **深色 Hero 和下方亮色割裂？** → 用 80px 渐变 + blur 过渡带衔接；公告条本来就是深色，视觉上是"深 → 深 → 渐变 → 亮"的自然过渡。
+4. **Scramble 影响可访问性？** → 标题用 aria-label 提供完整文本；prefers-reduced-motion 时跳过 scramble，直接淡入。
+5. **Lenis 全局会不会和现有滚动冲突？** → 只在 `/`(Index) 挂载，路由切换时 destroy；Play 页不受影响。
 
-- 本轮**只接入闪电心算**。如果效果 OK，下一轮把同一个 `<PracticeLog game="..." />` 挂到障碍闪电心算等游戏（数据已通用，只需要在对应游戏里加一次 insert）。
-- 错题"复练"先做最简单版本：从最近 N 道错题里随机抽 `count` 道，凑够当前配置的笔数，不重新生成新题。
+## 技术细节（给开发的参考）
+- 安装：`bun add lenis@^1.3.23`
+- WebGL shader：vertex 透传 + fragment 用距离场画发光圆点；连线用单独的 LINES drawArrays。
+- 节点数据：`Float32Array(N*4)` (x, y, vx, vy)，每帧 CPU 更新后 bufferSubData。
+- Scramble 字符集：`ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789`
+- 文件改动清单：
+  - `src/index.css`：+ `@keyframes shimmer`, `.hero-dark` 作用域变量覆盖
+  - `src/pages/Index.tsx`：重写 announcement bar + hero section（其余 section 原封不动）
+  - 新增 4 个组件/hook 文件
 
----
-
-确认这个方向就开干。
+## 不做的事
+- 不换字体（不引入 Space Mono）
+- 不加背景视频
+- 不动 Modules / Values / Footer
+- 不改全站配色
+- 不引入 framer-motion（用现有 CSS 动画 + ref 即可，不增加依赖）
