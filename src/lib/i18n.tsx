@@ -4,12 +4,13 @@ export type Lang = "zh" | "en";
 
 const DICT = {
   zh: {
-    brand_sub: "Brain Training Arena",
+    brand_sub: "Cognitive Performance Lab",
     today_pick: "今日推荐",
-    hero_h1_a: "专注、速算、记忆",
-    hero_h1_b: "皆可量化。",
-    hero_desc: "一套面向认知极限的训练与排行系统。每一笔成绩都被记录，每一次进步都可比较。",
-    start: "开始",
+    lab_tag: "LAB · 02 · 认知量化",
+    hero_h1_a: "量化",
+    hero_h1_b: "人类认知的边界。",
+    hero_desc: "Super Brain Lab 是一座面向认知极限的研究型训练场。专注、速算、记忆、反应——每一笔成绩被记录，每一次进步可比较。",
+    modules_meta: "EST. 2026 · CONSORTIUM",
     browse_all: "浏览全部训练 →",
     matrix: "认知矩阵",
     modules: "Modules",
