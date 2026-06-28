@@ -33,7 +33,7 @@ export function useAuth(): AuthState & { refreshProfile: () => Promise<void> } {
   };
 
   useEffect(() => {
-    // Listener FIRST, then getSession (per Lovable Cloud auth pattern).
+    // Listener FIRST, then getSession (Supabase auth pattern).
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setState((s) => ({ ...s, session, user: session?.user ?? null }));
       if (session?.user) {

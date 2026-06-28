@@ -1,20 +1,20 @@
 # NeuroPlay
 
-> A brain-training arena where focus, mental math, and memory are all measurable.
+> A brain-training arena where focus, mental math and memory are all measurable.
 > 一个把专注、速算、记忆都量化的脑力训练竞技场。
 
-NeuroPlay is a web app that bundles several scientifically-grounded cognitive
-training games, logs every attempt, and ranks players on a cloud leaderboard.
-Built with React + Vite + TypeScript on top of Lovable Cloud (Supabase).
+NeuroPlay bundles several cognitive-training games, logs every attempt, and
+ranks players on a cloud leaderboard. Built with React + Vite + TypeScript and
+a Supabase backend.
 
-Live preview: <https://mind-quest-rankings.lovable.app>
+Live demo: <https://mind-quest-rankings.lovable.app>
 
 ---
 
 ## ✨ Features
 
 - **7 training modules**
-  - **Flash Math** (闪电心算) — digits flash one by one, add them up mentally; voice answer supported.
+  - **Flash Math** (闪电心算) — digits flash one by one; add them up mentally. Voice answer supported.
   - **Gauntlet Flash Math** (障碍闪电心算) — flash math with drifting positions, decoys, noisy backgrounds and color-flip operators.
   - **Schulte Table** (舒尔特方格) — tap 1→N in order, the classic attention drill.
   - **Reaction Time** (反应速度) — millisecond click test.
@@ -25,13 +25,13 @@ Live preview: <https://mind-quest-rankings.lovable.app>
 - **Mistake book** — every wrong answer is saved; paginated review with an animated abacus walkthrough; "mistakes only" practice mode.
 - **Cloud leaderboard** — weekly / all-time, plus per-config and composite indices (PFI for Orbit, GFI for Gauntlet).
 - **Bilingual UI** — 中文 / English toggle in the top-right.
-- **Auth** — email + password via Lovable Cloud; scores auto-sync after login.
+- **Auth** — email + password; scores auto-sync after login.
 
 ## 🧱 Tech Stack
 
 - **Frontend**: React 18, Vite 5, TypeScript 5, Tailwind CSS 3, shadcn/ui, lucide-react
 - **Routing / State**: react-router-dom, @tanstack/react-query
-- **Backend**: Lovable Cloud (Supabase) — Postgres with RLS, Auth
+- **Backend**: Supabase — Postgres with RLS, Auth
 - **Testing**: Vitest, Testing Library
 
 ## 🚀 Getting Started
@@ -56,17 +56,14 @@ npm run test
 
 ### Environment
 
-The repo ships with a generated `.env` pointing at the Lovable Cloud project.
-Keys are publishable (anon) and safe to commit:
+Create a `.env` at the repo root with your Supabase credentials (the
+publishable anon key is safe to commit):
 
 ```
 VITE_SUPABASE_URL=...
 VITE_SUPABASE_PUBLISHABLE_KEY=...
 VITE_SUPABASE_PROJECT_ID=...
 ```
-
-If you fork the project and want your own backend, replace these with your
-own Supabase project values.
 
 ## 📁 Project Structure
 
@@ -85,13 +82,13 @@ src/
     leaderboard.ts    Game registry + cloud score helpers
     practiceLog.ts    Attempt logging + queries
     i18n.tsx          Language provider + toggle
-  integrations/supabase/  Auto-generated client & types — do not edit
+  integrations/supabase/  Generated client & types
 supabase/             Migrations & config
 ```
 
 ## 🗄️ Data Model
 
-Two main tables, both behind row-level security:
+Three tables, all behind row-level security:
 
 - `practice_attempts` — every answer (game, mode, terms, user answer, correct, time_ms).
 - `scores` — final round scores submitted to the leaderboard.
@@ -102,12 +99,6 @@ Two main tables, both behind row-level security:
 `src/lib/i18n.tsx` exports `LanguageProvider`, `useI18n()` and `<LanguageToggle />`.
 The dictionary is a single object keyed by `zh` / `en`; preference is persisted to
 `localStorage` under `lang`.
-
-## 🤝 Contributing
-
-This project is developed inside [Lovable](https://lovable.dev). Changes pushed
-to GitHub sync back into the Lovable editor automatically, and edits made in
-Lovable are pushed to GitHub in real time.
 
 ## 📄 License
 
