@@ -125,3 +125,24 @@
 .animate-pulse-glow { animation: pulse-glow 1.6s infinite; }
 .animate-shake { animation: shake .3s; }
 .animate-slide-up { animation: slide-up .3s ease-out; }
+
+/* Cinematic hero */
+@keyframes abacusBead {
+  0%, 12%   { transform: translateY(0); }
+  42%, 58%  { transform: translateY(var(--travel, 0)); }
+  88%, 100% { transform: translateY(0); }
+}
+@keyframes digitDrift {
+  0%, 100% { transform: translate(0, 0) rotate(0); opacity: .6; }
+  50%      { transform: translate(12px, -18px) rotate(4deg); opacity: 1; }
+}
+@keyframes heroRise {
+  from { opacity: 0; transform: translateY(14px); filter: blur(6px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+@keyframes heroGlow {
+  0%, 100% { opacity: .55; }
+  50%      { opacity: 1; }
+}
+.hero-rise { animation: heroRise .9s cubic-bezier(.2,.7,.2,1) both; }
+.hero-glow { animation: heroGlow 6s ease-in-out infinite; }
