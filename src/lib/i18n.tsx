@@ -20,6 +20,8 @@ const DICT = {
     sci: "科学出题",
     sci_d: "每位 0–9 均匀分布、单笔无重复，达到专业珠心算标准。",
     footer: "© NeuroPlay · 登录后成绩自动同步到云端",
+    coauthor: "由速算世界冠军 × 麻省理工学院 联合研发",
+    coauthor_sub: "World Mental-Calc Champion × MIT · Cognitive Performance Lab",
     tag_voice: "语音作答",
     tag_digits: "1–7 位",
     tag_speed: "200ms 极速",
