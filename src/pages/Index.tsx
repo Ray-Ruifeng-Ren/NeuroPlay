@@ -10,7 +10,7 @@ const Index = () => {
   const { t } = useI18n();
 
   return (
-    <div className="relative min-h-screen overflow-hidden text-foreground">
+    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
       {/* Cinematic looping video + cursor sparkles */}
       <TreeBackdrop />
       <SparkleCursor />
