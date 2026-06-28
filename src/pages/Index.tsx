@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { AccountMenu } from "@/components/AccountMenu";
 import { LanguageToggle, useI18n } from "@/lib/i18n";
-import VideoBackdrop from "@/components/hero/VideoBackdrop";
+import TreeBackdrop from "@/components/hero/TreeBackdrop";
 import SparkleCursor from "@/components/hero/SparkleCursor";
 import CardDeck from "@/components/hero/CardDeck";
 
