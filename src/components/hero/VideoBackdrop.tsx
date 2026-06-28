@@ -2,9 +2,8 @@ import { useEffect, useRef } from "react";
 import videoAsset from "@/assets/hero-bg.mp4.asset.json";
 
 /**
- * Cinematic looping background video with a manual fade-in / fade-out loop.
- * - 0.5s fade-in at start, 0.5s fade-out before end
- * - On ended: opacity 0, wait 100ms, reset to 0 and play again
+ * Cinematic looping background video.
+ * - Starts visible immediately, gentle fade at the loop seam.
  */
 export default function VideoBackdrop() {
   const ref = useRef<HTMLVideoElement>(null);
@@ -16,25 +15,22 @@ export default function VideoBackdrop() {
     const FADE = 0.5;
 
     const tick = () => {
-      if (!v.duration || isNaN(v.duration)) {
-        raf = requestAnimationFrame(tick);
-        return;
+      if (v.duration && !isNaN(v.duration)) {
+        const t = v.currentTime;
+        const d = v.duration;
+        let o = 1;
+        if (t < FADE) o = Math.max(0.2, t / FADE);
+        else if (t > d - FADE) o = Math.max(0.2, (d - t) / FADE);
+        v.style.opacity = String(o);
       }
-      const t = v.currentTime;
-      const d = v.duration;
-      let o = 1;
-      if (t < FADE) o = t / FADE;
-      else if (t > d - FADE) o = Math.max(0, (d - t) / FADE);
-      v.style.opacity = String(o);
       raf = requestAnimationFrame(tick);
     };
 
     const onEnded = () => {
-      v.style.opacity = "0";
       setTimeout(() => {
         v.currentTime = 0;
         void v.play().catch(() => {});
-      }, 100);
+      }, 80);
     };
 
     v.addEventListener("ended", onEnded);
@@ -48,19 +44,26 @@ export default function VideoBackdrop() {
   }, []);
 
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       <video
         ref={ref}
         src={videoAsset.url}
         muted
         playsInline
         autoPlay
+        loop
         preload="auto"
         className="absolute inset-0 h-full w-full object-cover"
-        style={{ opacity: 0, transition: "opacity 120ms linear" }}
+        style={{ opacity: 1, transition: "opacity 160ms linear" }}
       />
-      {/* Very light wash — keep video clearly visible while text stays legible */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/50" />
+      {/* Very subtle warm wash — keep footage visible, lift legibility only at edges */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(120% 80% at 50% 0%, rgba(40,30,15,0.10) 0%, rgba(20,15,8,0.05) 40%, rgba(20,15,8,0.35) 100%)",
+        }}
+      />
     </div>
   );
 }

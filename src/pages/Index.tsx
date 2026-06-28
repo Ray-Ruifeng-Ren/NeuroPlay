@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { AccountMenu } from "@/components/AccountMenu";
 import { LanguageToggle, useI18n } from "@/lib/i18n";
 import VideoBackdrop from "@/components/hero/VideoBackdrop";
+import SparkleCursor from "@/components/hero/SparkleCursor";
 import CardDeck from "@/components/hero/CardDeck";
 
 const Index = () => {
@@ -10,8 +11,9 @@ const Index = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      {/* Cinematic looping video */}
+      {/* Cinematic looping video + cursor sparkles */}
       <VideoBackdrop />
+      <SparkleCursor />
 
       {/* Nav */}
       <header className="relative z-30">
