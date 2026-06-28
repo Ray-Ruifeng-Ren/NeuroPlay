@@ -67,7 +67,7 @@ const DICT = {
       gauntlet: { name: "Gauntlet Flash Math", desc: "Flash math under position drift, decoys, noisy backgrounds and color flips." },
     },
   },
-} as const;
+};
 
 type Dict = typeof DICT["zh"];
 
