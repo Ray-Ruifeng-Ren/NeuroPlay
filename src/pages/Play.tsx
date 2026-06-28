@@ -15,10 +15,12 @@ import { AccountMenu } from "@/components/AccountMenu";
 import { PracticeLog } from "@/components/PracticeLog";
 import { MistakeBook } from "@/components/MistakeBook";
 import { PracticeStats } from "@/components/PracticeStats";
+import { LanguageToggle, useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const Play = () => {
   const { gameId } = useParams<{ gameId: string }>();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
   const [schulteSize, setSchulteSize] = useState(4);
@@ -60,11 +62,14 @@ const Play = () => {
             onClick={() => navigate("/")}
             className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            <ArrowLeft className="h-3.5 w-3.5" /> 广场
+            <ArrowLeft className="h-3.5 w-3.5" /> {t.arena}
             <span className="ml-1 text-muted-foreground/60">/</span>
-            <span className="ml-1 text-foreground">{game.name}</span>
+            <span className="ml-1 text-foreground">{t.games[game.id]?.name ?? game.name}</span>
           </button>
-          <AccountMenu />
+          <div className="flex items-center gap-2">
+            <LanguageToggle />
+            <AccountMenu />
+          </div>
         </div>
       </header>
 
