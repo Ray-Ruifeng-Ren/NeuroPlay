@@ -46,19 +46,29 @@ export async function logAttempt(input: AttemptInput): Promise<void> {
   }
 }
 
-/** Fetch all attempts for a game (most recent 500). */
+/** Fetch all attempts for a game (paginated, supports tens of thousands of rows). */
 export async function fetchAttempts(game: string): Promise<AttemptRow[]> {
   const { data: auth } = await supabase.auth.getUser();
   const uid = auth.user?.id;
   if (!uid) return [];
-  const { data } = await supabase
-    .from("practice_attempts")
-    .select("*")
-    .eq("user_id", uid)
-    .eq("game", game)
-    .order("created_at", { ascending: false })
-    .limit(500);
-  return (data ?? []) as AttemptRow[];
+  const PAGE = 1000;
+  const MAX_PAGES = 200; // up to 200k rows
+  const all: AttemptRow[] = [];
+  for (let i = 0; i < MAX_PAGES; i++) {
+    const from = i * PAGE;
+    const to = from + PAGE - 1;
+    const { data, error } = await supabase
+      .from("practice_attempts")
+      .select("*")
+      .eq("user_id", uid)
+      .eq("game", game)
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (error || !data || data.length === 0) break;
+    all.push(...(data as AttemptRow[]));
+    if (data.length < PAGE) break;
+  }
+  return all;
 }
 
 /** Fetch most recent wrong attempts (for replay). */
