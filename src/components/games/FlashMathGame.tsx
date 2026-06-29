@@ -191,6 +191,7 @@ export function FlashMathGame({
   );
   const startTimeRef = useRef<number>(0);
   const timerRef = useRef<number | null>(null);
+  const usedMistakeKeysRef = useRef<Set<string>>(new Set());
 
   useEffect(() => onCfgChange?.(cfg), [cfg, onCfgChange]);
 
@@ -201,11 +202,28 @@ export function FlashMathGame({
     } catch {}
   }, [cfg]);
 
+  const problemKey = (terms: number[], signs: string[], answer: number) =>
+    `${signs.join("")}|${terms.join(",")}|${answer}`;
+
   const loadProblem = async (): Promise<Problem | null> => {
     if (mistakeMode) {
-      const wrong = await fetchWrongAttempts("flashmath", 50);
+      const wrong = await fetchWrongAttempts("flashmath", 1000);
       if (wrong.length === 0) return null;
-      const w = wrong[Math.floor(Math.random() * wrong.length)];
+      // dedupe by problem identity
+      const uniq = new Map<string, typeof wrong[number]>();
+      for (const w of wrong) {
+        const k = problemKey(w.terms, w.signs, w.answer);
+        if (!uniq.has(k)) uniq.set(k, w);
+      }
+      const pool = Array.from(uniq.entries());
+      // prefer not-yet-used in this session
+      let candidates = pool.filter(([k]) => !usedMistakeKeysRef.current.has(k));
+      if (candidates.length === 0) {
+        usedMistakeKeysRef.current.clear();
+        candidates = pool;
+      }
+      const [k, w] = candidates[Math.floor(Math.random() * candidates.length)];
+      usedMistakeKeysRef.current.add(k);
       return { terms: w.terms, signs: w.signs as ("+" | "-")[], answer: w.answer };
     }
     return buildProblem(cfg.count, cfg.digits, cfg.includeSub);
