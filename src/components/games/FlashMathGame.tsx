@@ -191,6 +191,7 @@ export function FlashMathGame({
   );
   const startTimeRef = useRef<number>(0);
   const timerRef = useRef<number | null>(null);
+  const usedMistakeKeysRef = useRef<Set<string>>(new Set());
 
   useEffect(() => onCfgChange?.(cfg), [cfg, onCfgChange]);
 
@@ -201,11 +202,28 @@ export function FlashMathGame({
     } catch {}
   }, [cfg]);
 
+  const problemKey = (terms: number[], signs: string[], answer: number) =>
+    `${signs.join("")}|${terms.join(",")}|${answer}`;
+
   const loadProblem = async (): Promise<Problem | null> => {
     if (mistakeMode) {
-      const wrong = await fetchWrongAttempts("flashmath", 50);
+      const wrong = await fetchWrongAttempts("flashmath", 1000);
       if (wrong.length === 0) return null;
-      const w = wrong[Math.floor(Math.random() * wrong.length)];
+      // dedupe by problem identity
+      const uniq = new Map<string, typeof wrong[number]>();
+      for (const w of wrong) {
+        const k = problemKey(w.terms, w.signs, w.answer);
+        if (!uniq.has(k)) uniq.set(k, w);
+      }
+      const pool = Array.from(uniq.entries());
+      // prefer not-yet-used in this session
+      let candidates = pool.filter(([k]) => !usedMistakeKeysRef.current.has(k));
+      if (candidates.length === 0) {
+        usedMistakeKeysRef.current.clear();
+        candidates = pool;
+      }
+      const [k, w] = candidates[Math.floor(Math.random() * candidates.length)];
+      usedMistakeKeysRef.current.add(k);
       return { terms: w.terms, signs: w.signs as ("+" | "-")[], answer: w.answer };
     }
     return buildProblem(cfg.count, cfg.digits, cfg.includeSub);
@@ -286,10 +304,14 @@ export function FlashMathGame({
   };
 
   const beginCountdown = async () => {
+    usedMistakeKeysRef.current.clear();
     const p = await loadProblem();
     if (!p) {
       toast({ title: "没有错题可以练", description: "请关闭「只练错题」开关。" });
       return;
+    }
+    if (mistakeMode) {
+      usedMistakeKeysRef.current.add(problemKey(p.terms, p.signs, p.answer));
     }
     setProblem(p);
     setIsReplay(mistakeMode);
@@ -484,12 +506,14 @@ export function FlashMathGame({
   }
 
   if (phase === "playing" && problem) {
-    const sign = problem.signs[stepIdx];
-    const term = problem.terms[stepIdx];
+    const inRange = stepIdx < problem.terms.length;
+    const sign = inRange ? problem.signs[stepIdx] : undefined;
+    const term = inRange ? problem.terms[stepIdx] : undefined;
+    const displayIdx = Math.min(stepIdx, problem.terms.length - 1);
     return (
       <div className="flex flex-col items-center gap-3">
         <div className="flex w-full items-center justify-between text-[11px] text-muted-foreground">
-          <span className="font-mono-tabular">{stepIdx + 1} / {problem.terms.length}</span>
+          <span className="font-mono-tabular">{displayIdx + 1} / {problem.terms.length}</span>
           <span className="font-mono-tabular">
             {cfg.rounds > 1 && <span className="mr-2 text-primary">第 {session.round + 1} / {cfg.rounds} 场</span>}
             {cfg.speedMs}ms
@@ -499,11 +523,11 @@ export function FlashMathGame({
         <div className="h-px w-full bg-border">
           <div
             className="h-px bg-primary transition-all duration-100"
-            style={{ width: `${((stepIdx + 1) / problem.terms.length) * 100}%` }}
+            style={{ width: `${((displayIdx + 1) / problem.terms.length) * 100}%` }}
           />
         </div>
         <div className="flex h-[320px] w-full items-center justify-center rounded-md border border-border bg-foreground text-background">
-          {showTerm ? (
+          {showTerm && inRange ? (
             <div key={stepIdx} className="flex items-center gap-3">
               {sign === "-" && <Minus className="h-12 w-12 text-background/80" strokeWidth={3} />}
               <span className="font-mono-tabular text-8xl font-semibold tracking-tight">{term}</span>

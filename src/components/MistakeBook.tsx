@@ -28,7 +28,16 @@ export function MistakeBook({ game, refreshKey, mistakeMode, onMistakeModeChange
     setLoading(true);
     fetchWrongAttempts(game, 1000).then((w) => {
       if (!live) return;
-      setWrong(w);
+      // dedupe: keep most recent attempt per unique problem
+      const seen = new Set<string>();
+      const uniq: AttemptRow[] = [];
+      for (const r of w) {
+        const k = `${(r.signs ?? []).join("")}|${(r.terms ?? []).join(",")}|${r.answer}`;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        uniq.push(r);
+      }
+      setWrong(uniq);
       setLoading(false);
     });
     return () => {
