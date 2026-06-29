@@ -484,12 +484,14 @@ export function FlashMathGame({
   }
 
   if (phase === "playing" && problem) {
-    const sign = problem.signs[stepIdx];
-    const term = problem.terms[stepIdx];
+    const inRange = stepIdx < problem.terms.length;
+    const sign = inRange ? problem.signs[stepIdx] : undefined;
+    const term = inRange ? problem.terms[stepIdx] : undefined;
+    const displayIdx = Math.min(stepIdx, problem.terms.length - 1);
     return (
       <div className="flex flex-col items-center gap-3">
         <div className="flex w-full items-center justify-between text-[11px] text-muted-foreground">
-          <span className="font-mono-tabular">{stepIdx + 1} / {problem.terms.length}</span>
+          <span className="font-mono-tabular">{displayIdx + 1} / {problem.terms.length}</span>
           <span className="font-mono-tabular">
             {cfg.rounds > 1 && <span className="mr-2 text-primary">第 {session.round + 1} / {cfg.rounds} 场</span>}
             {cfg.speedMs}ms
@@ -499,11 +501,11 @@ export function FlashMathGame({
         <div className="h-px w-full bg-border">
           <div
             className="h-px bg-primary transition-all duration-100"
-            style={{ width: `${((stepIdx + 1) / problem.terms.length) * 100}%` }}
+            style={{ width: `${((displayIdx + 1) / problem.terms.length) * 100}%` }}
           />
         </div>
         <div className="flex h-[320px] w-full items-center justify-center rounded-md border border-border bg-foreground text-background">
-          {showTerm ? (
+          {showTerm && inRange ? (
             <div key={stepIdx} className="flex items-center gap-3">
               {sign === "-" && <Minus className="h-12 w-12 text-background/80" strokeWidth={3} />}
               <span className="font-mono-tabular text-8xl font-semibold tracking-tight">{term}</span>
