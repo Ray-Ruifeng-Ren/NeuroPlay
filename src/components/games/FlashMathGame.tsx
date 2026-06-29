@@ -304,10 +304,14 @@ export function FlashMathGame({
   };
 
   const beginCountdown = async () => {
+    usedMistakeKeysRef.current.clear();
     const p = await loadProblem();
     if (!p) {
       toast({ title: "没有错题可以练", description: "请关闭「只练错题」开关。" });
       return;
+    }
+    if (mistakeMode) {
+      usedMistakeKeysRef.current.add(problemKey(p.terms, p.signs, p.answer));
     }
     setProblem(p);
     setIsReplay(mistakeMode);
